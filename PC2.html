@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排程模擬</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+        }
+        .monitor-container {
+            max-height: 600px;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+        }
+        .capacity-list, .station-list, .task-type-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+        }
+        .tab-button {
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .timeline-container {
+            background-color: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .timeline-wrapper {
+            display: flex;
+            width: 100%;
+        }
+        .station-labels {
+            width: 80px;
+            flex-shrink: 0;
+        }
+        .station-label-spacer {
+            height: 20px;
+        }
+        .station-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: right;
+            padding-right: 10px;
+            height: 40px;
+            line-height: 40px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .timeline {
+            position: relative;
+            flex-grow: 1;
+            overflow-x: auto;
+        }
+        .timeline-axis {
+            display: flex;
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            height: 20px;
+            width: 1920px;
+        }
+        .timeline-half-hour {
+            flex: 1;
+            text-align: center;
+            font-size: 0.8rem;
+            border-right: 1px dashed #ddd;
+            min-width: 40px;
+        }
+        .timeline-station {
+            position: relative;
+            height: 40px;
+            width: 1920px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .timeline-tasks {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 40px;
+            width: 1920px;
+            display: flex;
+            align-items: center;
+        }
+        .task {
+            position: absolute;
+            height: 30px;
+            border: 1px solid rgba(255, 255, 0.5);
+            border-radius: 6px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            padding: 0 5px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .task:hover {
+            transform: scale(1.05);
+        }
+        .custom-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.25);
+            color: white;
+            font-size: 1rem;
+            padding: 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            white-space: pre-wrap;
+            pointer-events: none;
+        }
+        .datetime-modal {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 300px;
+        }
+        .datetime-modal input {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
+        .datetime-modal .buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        .datetime-modal button {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .datetime-modal .confirm-btn {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .datetime-modal .cancel-btn {
+            background-color: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center mb-6">排程模擬</h1>
+        <div class="mb-4">
+            <button id="workpieceTab" class="tab-button bg-gray-200 active">工件管理</button>
+            <button id="capacityTab" class="tab-button bg-gray-200">管理</button>
+            <button id="monitorTab" class="tab-button bg-gray-200">監控</button>
+            <button id="timelineTab" class="tab-button bg-gray-200">作業時間軸</button>
+        </div>
+        <!-- 工件管理頁籤 -->
+        <div id="workpieceContent" class="tab-content active">
+            <div class="mb-6 bg-white p-4 rounded shadow">
+                <button id="reset" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    重置系統
+                </button>
+            </div>
+            <div id="stations" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <!-- 站點將由 JavaScript 動態生成 -->
+            </div>
+            <div id="workpieces" class="bg-white p-4 rounded shadow mb-6">
+                <h2 class="text-xl font-semibold mb-2">工件狀態</h2>
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border p-2">編號</th>
+                            <th class="border p-2">客戶</th>
+                            <th class="border p-2">容量</th>
+                            <th class="border p-2">產品</th>
+                            <th class="border p-2">急件</th>
+                            <th class="border p-2">當前站點</th>
+                            <th class="border p-2">站點路徑</th>
+                            <th class="border p-2">開始時間</th>
+                            <th class="border p-2">預計完成時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workpieceList"></tbody>
+                </table>
+            </div>
+            <div id="tasks" class="bg-white p-4 rounded shadow mb-6">
+                <h2 class="text-xl font-semibold mb-2">工作狀態</h2>
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border p-2">編號</th>
+                            <th class="border p-2">作業種類</th>
+                            <th class="border p-2">站點</th>
+                            <th class="border p-2">開始時間</th>
+                            <th class="border p-2">結束時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskList"></tbody>
+                </table>
+            </div>
+            <div id="log" class="log-container">
+                <h2 class="text-xl font-semibold">系統日誌</h2>
+                <ul id="logList" class="list-disc list-inside"></ul>
+            </div>
+        </div>
+        <!-- 管理頁籤 -->
+        <div id="capacityContent" class="tab-content">
+            <div class="mb-6 bg-white p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2">管理作業種類</h2>
+                <div class="flex flex-row gap-4 mb-4">
+                    <div class="flex-1">
+                        <label class="block mb-2">作業種類名稱：</label>
+                        <input type="text" id="taskTypeInput" class="border p-2 rounded w-full" placeholder="輸入作業種類名稱" />
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="addTaskType" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        添加作業種類
+                    </button>
+                </div>
+            </div>
+            <div class="task-type-list mb-6">
+                <h2 class="text-xl font-semibold mb-2">作業種類列表</h2>
+                <div id="taskTypeListMessage" class="mb-2 text-gray-500"></div>
+                <ul id="taskTypeList" class="list-disc list-inside"></ul>
+            </div>
+            <div class="mb-6 bg-white p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2">管理站點</h2>
+                <div class="flex flex-row gap-4 mb-4">
+                    <div class="flex-1">
+                        <label class="block mb-2">站點名稱：</label>
+                        <input type="text" id="stationInput" class="border p-2 rounded w-full" placeholder="輸入站點名稱" />
+                    </div>
+                    <div class="flex-1">
+                        <label class="block mb-2">插入位置：</label>
+                        <select id="stationPosition" class="border p-2 rounded w-full">
+                            <option value="start">最前面</option>
+                            <option value="end">最後面</option>
+                            <!-- 其他站點選項將由 JavaScript 動態生成 -->
+                        </select>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="addStation" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        添加站點
+                    </button>
+                </div>
+            </div>
+            <div class="station-list mb-6">
+                <h2 class="text-xl font-semibold mb-2">站點列表</h2>
+                <div id="stationListMessage" class="mb-2 text-gray-500"></div>
+                <ul id="stationList" class="list-disc list-inside"></ul>
+            </div>
+            <div class="mb-6 bg-white p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2">管理容量與作業時間</h2>
+                <div class="flex flex-row gap-4 mb-4">
+                    <div class="flex-1">
+                        <label class="block mb-2">容量：</label>
+                        <input type="text" id="capacityInput" class="border p-2 rounded w-full" placeholder="輸入容量（如 1000ml）" />
+                    </div>
+                    <div id="processingTimesContainer" class="flex-4 flex flex-row gap-4">
+                        <!-- 作業時間輸入框將由 JavaScript 動態生成 -->
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="addCapacity" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        添加容量與作業時間
+                    </button>
+                </div>
+            </div>
+            <div class="capacity-list">
+                <h2 class="text-xl font-semibold mb-2">容量與作業時間列表</h2>
+                <div id="capacityListMessage" class="mb-2 text-gray-500"></div>
+                <ul id="capacityList" class="list-disc list-inside"></ul>
+            </div>
+        </div>
+        <!-- 監控頁籤 -->
+        <div id="monitorContent" class="tab-content">
+            <div class="monitor-container">
+                <h2 class="text-xl font-semibold mb-2">時間計算監控</h2>
+                <ul id="monitorList" class="list-disc list-inside"></ul>
+            </div>
+        </div>
+        <!-- 作業時間軸頁籤 -->
+        <div id="timelineContent" class="tab-content">
+            <div class="mb-6 bg-white p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2">添加新工件</h2>
+                <div class="flex flex-row gap-4 mb-4">
+                    <div class="w-1/4">
+                        <label class="block mb-2">客戶：</label>
+                        <input type="text" id="timelineCustomerInput" class="border p-2 rounded w-full" placeholder="輸入客戶名稱" />
+                    </div>
+                    <div class="w-1/4">
+                        <label class="block mb-2">容量：</label>
+                        <select id="timelineCapacitySelect" class="border p-2 rounded w-full">
+                            <option value="">請選擇容量</option>
+                        </select>
+                        <div id="timelineCapacityMessage" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+                    <div class="w-1/4">
+                        <label class="block mb-2">產品：</label>
+                        <input type="text" id="timelineProductInput" class="border p-2 rounded w-full" placeholder="輸入產品名稱" />
+                    </div>
+                    <div class="w-1/4">
+                        <label class="block mb-2">開始時間（第一站）：</label>
+                        <input type="datetime-local" id="timelineStartTimeInput" class="border p-2 rounded w-full" />
+                    </div>
+                </div>
+                <div class="flex flex-row gap-4 mb-4">
+                    <div class="w-1/4">
+                        <label class="block mb-2">是否急件：</label>
+                        <input type="checkbox" id="urgentInput" class="border p-2 rounded" />
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block mb-2">選擇站點：</label>
+                    <div id="timelineStationCheckboxes" class="flex flex-wrap gap-4">
+                        <!-- 站點 checkbox 將由 JavaScript 動態生成 -->
+                    </div>
+                </div>
+                <button id="timelineAddWorkpiece" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    添加工件
+                </button>
+            </div>
+            <div class="mb-6 bg-white p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2">新增工作</h2>
+                <div class="flex flex-row gap-4 mb-4">
+                    <div class="w-1/4">
+                        <label class="block mb-2">作業種類：</label>
+                        <select id="timelineTaskTypeSelect" class="border p-2 rounded w-full">
+                            <option value="">請選擇作業種類</option>
+                        </select>
+                        <div id="timelineTaskTypeMessage" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+                    <div class="w-1/4">
+                        <label class="block mb-2">開始時間：</label>
+                        <input type="datetime-local" id="timelineTaskStartTimeInput" class="border p-2 rounded w-full" />
+                    </div>
+                    <div class="w-1/4">
+                        <label class="block mb-2">結束時間：</label>
+                        <input type="datetime-local" id="timelineTaskEndTimeInput" class="border p-2 rounded w-full" />
+                    </div>
+                    <div class="w-1/4">
+                        <label class="block mb-2">站點：</label>
+                        <select id="timelineTaskStationSelect" class="border p-2 rounded w-full">
+                            <option value="">請選擇站點</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="timelineAddTask" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    新增工作
+                </button>
+            </div>
+            <div class="mb-4 flex flex-row gap-4">
+                <div class="flex-1">
+                    <label class="block mb-2">選擇日期：</label>
+                    <div class="flex gap-2">
+                        <button id="prevDay" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-1 px-2 rounded">←</button>
+                        <input type="date" id="dateFilter" class="border p-2 rounded w-full" value="2025-05-20" />
+                        <button id="nextDay" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-1 px-2 rounded">→</button>
+                    </div>
+                </div>
+            </div>
+            <div id="timelineCharts" class="timeline-container">
+                <h2 class="text-xl font-semibold mb-2">作業時間軸</h2>
+                <!-- 圖表將由 JavaScript 動態生成 -->
+            </div>
+            <!-- 添加工件狀態表 -->
+            <div id="timelineWorkpieces" class="bg-white p-4 rounded shadow mb-6">
+                <h2 class="text-xl font-semibold mb-2">工件狀態</h2>
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border p-2">編號</th>
+                            <th class="border p-2">客戶</th>
+                            <th class="border p-2">容量</th>
+                            <th class="border p-2">產品</th>
+                            <th class="border p-2">急件</th>
+                            <th class="border p-2">當前站點</th>
+                            <th class="border p-2">站點路徑</th>
+                            <th class="border p-2">開始時間</th>
+                            <th class="border p-2">預計完成時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timelineWorkpieceList"></tbody>
+                </table>
+            </div>
+            <!-- 添加工作狀態表 -->
+            <div id="timelineTasks" class="bg-white p-4 rounded shadow mb-6">
+                <h2 class="text-xl font-semibold mb-2">工作狀態</h2>
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border p-2">編號</th>
+                            <th class="border p-2">作業種類</th>
+                            <th class="border p-2">站點</th>
+                            <th class="border p-2">開始時間</th>
+                            <th class="border p-2">結束時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timelineTaskList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        let stations = [];
+        const defaultStations = [
+            { name: '中和', startTime: null },
+            { name: '清洗', startTime: null },
+            { name: '檢測', startTime: null },
+            { name: '裝填', startTime: null },
+            { name: 'RD裝填1', startTime: null }
+        ];
+
+        const storedStations = localStorage.getItem('stations');
+        if (storedStations) {
+            try {
+                const parsed = JSON.parse(storedStations);
+                if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(station => station.name && (typeof station.startTime === 'number' || station.startTime === null))) {
+                    stations = parsed;
+                } else {
+                    stations = defaultStations;
+                    localStorage.setItem('stations', JSON.stringify(stations));
+                }
+            } catch (error) {
+                console.error('無法解析 localStorage 中的 stations 數據：', error);
+                stations = defaultStations;
+                localStorage.setItem('stations', JSON.stringify(stations));
+            }
+        } else {
+            stations = defaultStations;
+            localStorage.setItem('stations', JSON.stringify(stations));
+        }
+
+        let taskTypes = [];
+        const defaultTaskTypes = ['組裝', '測試', '包裝'];
+        const storedTaskTypes = localStorage.getItem('taskTypes');
+        if (storedTaskTypes) {
+            try {
+                const parsed = JSON.parse(storedTaskTypes);
+                if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(type => typeof type === 'string')) {
+                    taskTypes = parsed;
+                } else {
+                    taskTypes = defaultTaskTypes;
+                    localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
+                }
+            } catch (error) {
+                console.error('無法解析 localStorage 中的 taskTypes 數據：', error);
+                taskTypes = defaultTaskTypes;
+                localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
+            }
+        } else {
+            taskTypes = defaultTaskTypes;
+            localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
+        }
+
+        let workpieceId = 0;
+        let taskId = 0;
+        let workpieces = {};
+        let tasks = {};
+        let monitorLogs = [];
+        let currentProcessingTimes = Array(stations.length).fill(10);
+
+        // 從 localStorage 載入 workpieceId 和 taskId
+        const storedWorkpieceId = localStorage.getItem('workpieceId');
+        if (storedWorkpieceId) {
+            try {
+                workpieceId = parseInt(storedWorkpieceId);
+                if (isNaN(workpieceId) || workpieceId < 0) {
+                    workpieceId = 0;
+                    localStorage.setItem('workpieceId', '0');
+                }
+            } catch (error) {
+                console.error('無法解析 localStorage 中的 workpieceId：', error);
+                workpieceId = 0;
+                localStorage.setItem('workpieceId', '0');
+            }
+        } else {
+            localStorage.setItem('workpieceId', '0');
+        }
+
+        const storedTaskId = localStorage.getItem('taskId');
+        if (storedTaskId) {
+            try {
+                taskId = parseInt(storedTaskId);
+                if (isNaN(taskId) || taskId < 0) {
+                    taskId = 0;
+                    localStorage.setItem('taskId', '0');
+                }
+            } catch (error) {
+                console.error('無法解析 localStorage 中的 taskId：', error);
+                taskId = 0;
+                localStorage.setItem('taskId', '0');
+            }
+        } else {
+            localStorage.setItem('taskId', '0');
+        }
+
+        // 從 localStorage 載入 workpieces
+        const storedWorkpieces = localStorage.getItem('workpieces');
+        if (storedWorkpieces) {
+            try {
+                const parsed = JSON.parse(storedWorkpieces);
+                if (typeof parsed === 'object' && parsed !== null) {
+                    workpieces = parsed;
+                    // 驗證資料結構
+                    Object.keys(workpieces).forEach(wpId => {
+                        const wp = workpieces[wpId];
+                        if (!wp.path || !Array.isArray(wp.path) ||
+                            !wp.stationTimes || !Array.isArray(wp.stationTimes) ||
+                            !wp.status || !wp.processingTimes || !Array.isArray(wp.processingTimes)) {
+                            delete workpieces[wpId];
+                        }
+                    });
+                    // 確保 workpieceId 與現有工件一致
+                    const maxWpId = Math.max(...Object.keys(workpieces).map(id => parseInt(id)), 0);
+                    if (maxWpId > workpieceId) {
+                        workpieceId = maxWpId;
+                        localStorage.setItem('workpieceId', workpieceId.toString());
+                    }
+                } else {
+                    workpieces = {};
+                    localStorage.setItem('workpieces', JSON.stringify(workpieces));
+                }
+            } catch (error) {
+                console.error('無法解析 localStorage 中的 workpieces 數據：', error);
+                workpieces = {};
+                localStorage.setItem('workpieces', JSON.stringify(workpieces));
+            }
+        } else {
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+        }
+
+        // 從 localStorage 載入 tasks
+        const storedTasks = localStorage.getItem('tasks');
+        if (storedTasks) {
+            try {
+                const parsed = JSON.parse(storedTasks);
+                if (typeof parsed === 'object' && parsed !== null) {
+                    tasks = parsed;
+                    // 驗證資料結構
+                    Object.keys(tasks).forEach(taskId => {
+                        const task = tasks[taskId];
+                        if (!task.taskType || !task.stationIndex || !task.startTime || !task.endTime || !task.status) {
+                            delete tasks[taskId];
+                        }
+                    });
+                    // 確保 taskId 與現有工作一致
+                    const maxTaskId = Math.max(...Object.keys(tasks).map(id => parseInt(id)), 0);
+                    if (maxTaskId > taskId) {
+                        taskId = maxTaskId;
+                        localStorage.setItem('taskId', taskId.toString());
+                    }
+                } else {
+                    tasks = {};
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                }
+            } catch (error) {
+                console.error('無法解析 localStorage 中的 tasks 數據：', error);
+                tasks = {};
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+        } else {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        let capacities = [];
+        const storedCapacities = localStorage.getItem('capacities');
+        if (storedCapacities) {
+            try {
+                const parsed = JSON.parse(storedCapacities);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    if (typeof parsed[0] === 'string') {
+                        capacities = parsed.map(capacity => ({
+                            capacity: capacity,
+                            processingTimes: Array(stations.length).fill(10)
+                        }));
+                        localStorage.setItem('capacities', JSON.stringify(capacities));
+                    } else if (parsed.every(item => item.capacity && Array.isArray(item.processingTimes))) {
+                        capacities = parsed.map(item => ({
+                            capacity: item.capacity,
+                            processingTimes: item.processingTimes.length === stations.length ? item.processingTimes : Array(stations.length).fill(10)
+                        }));
+                        localStorage.setItem('capacities', JSON.stringify(capacities));
+                    } else {
+                        capacities = [
+                            { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
+                            { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
+                            { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
+                        ];
+                        localStorage.setItem('capacities', JSON.stringify(capacities));
+                    }
+                } else {
+                    capacities = [
+                        { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
+                        { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
+                        { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
+                    ];
+                    localStorage.setItem('capacities', JSON.stringify(capacities));
+                }
+            } catch (error) {
+                console.error('無法解析 localStorage 中的 capacities 數據：', error);
+                capacities = [
+                    { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
+                    { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
+                    { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
+                ];
+                localStorage.setItem('capacities', JSON.stringify(capacities));
+            }
+        } else {
+            capacities = [
+                { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
+                { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
+                { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
+            ];
+            localStorage.setItem('capacities', JSON.stringify(capacities));
+        }
+
+        const workpieceTab = document.getElementById('workpieceTab');
+        const capacityTab = document.getElementById('capacityTab');
+        const monitorTab = document.getElementById('monitorTab');
+        const timelineTab = document.getElementById('timelineTab');
+        const workpieceContent = document.getElementById('workpieceContent');
+        const capacityContent = document.getElementById('capacityContent');
+        const monitorContent = document.getElementById('monitorContent');
+        const timelineContent = document.getElementById('timelineContent');
+
+        function switchTab(tab) {
+            console.log(`切換到頁籤：${tab}`);
+            workpieceTab.classList.remove('active');
+            capacityTab.classList.remove('active');
+            monitorTab.classList.remove('active');
+            timelineTab.classList.remove('active');
+            workpieceContent.classList.remove('active');
+            capacityContent.classList.remove('active');
+            monitorContent.classList.remove('active');
+            timelineContent.classList.remove('active');
+
+            if (tab === 'workpiece') {
+                workpieceTab.classList.add('active');
+                workpieceContent.classList.add('active');
+                renderStationCheckboxes();
+            } else if (tab === 'capacity') {
+                capacityTab.classList.add('active');
+                capacityContent.classList.add('active');
+                renderTaskTypes();
+                renderCapacities();
+                renderStationsList();
+                renderProcessingTimesInputs();
+                updateStationPositionDropdown();
+            } else if (tab === 'monitor') {
+                monitorTab.classList.add('active');
+                monitorContent.classList.add('active');
+                renderMonitorLogs();
+            } else if (tab === 'timeline') {
+                timelineTab.classList.add('active');
+                timelineContent.classList.add('active');
+                populateTimelineCapacityDropdown();
+                populateTimelineTaskTypeDropdown();
+                populateTimelineTaskStationDropdown();
+                renderTimelineStationCheckboxes();
+
+                // 確保 DOM 佈局完成後渲染
+                const ensureLayoutAndRender = () => {
+                    const timelineCharts = document.getElementById('timelineCharts');
+                    const isVisible = timelineContent.offsetParent !== null;
+                    const rect = timelineCharts.getBoundingClientRect();
+                    const hasDimensions = rect.width > 0 && rect.height > 0;
+                    console.log(`檢查 timelineContent 可見性：${isVisible}, 尺寸：width=${rect.width}, height=${rect.height}`);
+                    if (isVisible && hasDimensions) {
+                        renderTimelineCharts();
+                        // 額外觸發重繪
+                        timelineCharts.offsetHeight;
+                        // 延遲重繪以確保瀏覽器完成渲染
+                        setTimeout(() => {
+                            timelineCharts.offsetHeight;
+                            console.log('完成 timelineContent 切換並渲染');
+                        }, 50);
+                    } else {
+                        requestAnimationFrame(ensureLayoutAndRender);
+                    }
+                };
+                requestAnimationFrame(ensureLayoutAndRender);
+
+                // 切換到時間軸頁籤時，設置時間選擇器為空白
+                document.getElementById('timelineStartTimeInput').value = '';
+                document.getElementById('timelineTaskStartTimeInput').value = '';
+                document.getElementById('timelineTaskEndTimeInput').value = '';
+                console.log('切換到時間軸頁籤，設置時間選擇器為空白');
+            }
+        }
+
+        workpieceTab.addEventListener('click', () => switchTab('workpiece'));
+        capacityTab.addEventListener('click', () => switchTab('capacity'));
+        monitorTab.addEventListener('click', () => switchTab('monitor'));
+        timelineTab.addEventListener('click', () => switchTab('timeline'));
+
+        function renderTaskTypes() {
+            const taskTypeList = document.getElementById('taskTypeList');
+            const taskTypeListMessage = document.getElementById('taskTypeListMessage');
+            taskTypeList.innerHTML = '';
+
+            if (taskTypes.length === 0) {
+                taskTypeListMessage.textContent = '尚未添加作業種類，請在上面輸入並添加。';
+            } else {
+                taskTypeListMessage.textContent = '';
+                taskTypes.forEach((type, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center mb-2';
+                    li.innerHTML = `
+                        <span>作業種類: ${type}</span>
+                        <button class="delete-task-type-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-index="${index}">刪除</button>
+                    `;
+                    taskTypeList.appendChild(li);
+                });
+            }
+
+            document.querySelectorAll('.delete-task-type-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    taskTypes.splice(index, 1);
+                    localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
+                    renderTaskTypes();
+                    populateTimelineTaskTypeDropdown();
+                });
+            });
+        }
+
+        document.getElementById('addTaskType').addEventListener('click', () => {
+            const taskTypeInput = document.getElementById('taskTypeInput');
+            const taskTypeName = taskTypeInput.value.trim();
+
+            if (!taskTypeName) {
+                alert('請輸入作業種類名稱！');
+                return;
+            }
+            if (taskTypes.includes(taskTypeName)) {
+                alert('此作業種類已存在！');
+                return;
+            }
+
+            taskTypes.push(taskTypeName);
+            localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
+            taskTypeInput.value = '';
+            renderTaskTypes();
+            populateTimelineTaskTypeDropdown();
+            addLog(`已添加作業種類 ${taskTypeName}`);
+        });
+
+        function populateTimelineTaskTypeDropdown() {
+            const taskTypeSelect = document.getElementById('timelineTaskTypeSelect');
+            const taskTypeMessage = document.getElementById('timelineTaskTypeMessage');
+            taskTypeSelect.innerHTML = '<option value="">請選擇作業種類</option>';
+            if (taskTypes.length === 0) {
+                taskTypeMessage.textContent = '尚未添加作業種類，請前往“管理”頁籤添加。';
+            } else {
+                taskTypeMessage.textContent = '';
+                taskTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    taskTypeSelect.appendChild(option);
+                });
+            }
+        }
+
+        function populateTimelineTaskStationDropdown() {
+            const taskStationSelect = document.getElementById('timelineTaskStationSelect');
+            taskStationSelect.innerHTML = '<option value="">請選擇站點</option>';
+            stations.forEach((station, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = station.name;
+                taskStationSelect.appendChild(option);
+            });
+        }
+
+        function updateStationPositionDropdown() {
+            const positionSelect = document.getElementById('stationPosition');
+            positionSelect.innerHTML = `
+                <option value="start">最前面</option>
+                <option value="end">最後面</option>
+            `;
+            stations.forEach((station, index) => {
+                const option = document.createElement('option');
+                option.value = `before_${index}`;
+                option.textContent = `在 ${station.name} 之前`;
+                positionSelect.appendChild(option);
+            });
+        }
+
+        function renderStationsList() {
+            const stationList = document.getElementById('stationList');
+            const stationListMessage = document.getElementById('stationListMessage');
+            stationList.innerHTML = '';
+
+            if (stations.length === 0) {
+                stationListMessage.textContent = '尚未添加站點，請在上面輸入並添加。';
+            } else {
+                stationListMessage.textContent = '';
+                stations.forEach((station, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center mb-2';
+                    li.innerHTML = `
+                        <span>站點: ${station.name}</span>
+                        <div>
+                            <button class="move-up-btn bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded mr-2 ${index === 0 ? 'opacity-50 cursor-not-allowed' : ''}" data-index="${index}" ${index === 0 ? 'disabled' : ''}>上移</button>
+                            <button class="move-down-btn bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded mr-2 ${index === stations.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-index="${index}" ${index === stations.length - 1 ? 'disabled' : ''}>下移</button>
+                            <button class="delete-station-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-index="${index}">刪除</button>
+                        </div>
+                    `;
+                    stationList.appendChild(li);
+                });
+            }
+
+            document.querySelectorAll('.delete-station-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    deleteStation(index);
+                });
+            });
+
+            document.querySelectorAll('.move-up-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    if (index > 0) {
+                        moveStationUp(index);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.move-down-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    if (index < stations.length - 1) {
+                        moveStationDown(index);
+                    }
+                });
+            });
+
+            updateStationPositionDropdown();
+        }
+
+        function moveStationUp(index) {
+            if (index <= 0) return;
+
+            // 交換 stations 陣列中的元素
+            [stations[index], stations[index - 1]] = [stations[index - 1], stations[index]];
+
+            // 同步更新 capacities 和 currentProcessingTimes
+            capacities = capacities.map(item => {
+                const processingTimes = [...item.processingTimes];
+                [processingTimes[index], processingTimes[index - 1]] = [processingTimes[index - 1], processingTimes[index]];
+                return { ...item, processingTimes };
+            });
+            [currentProcessingTimes[index], currentProcessingTimes[index - 1]] = [currentProcessingTimes[index - 1], currentProcessingTimes[index]];
+
+            // 更新工件的路徑
+            Object.keys(workpieces).forEach(wpId => {
+                const wp = workpieces[wpId];
+                if (wp.status === 'canceled') return;
+
+                wp.path = wp.path.map(stationIdx => {
+                    if (stationIdx === index) return index - 1;
+                    if (stationIdx === index - 1) return index;
+                    return stationIdx;
+                });
+
+                if (wp.currentStation === index) {
+                    wp.currentStation = index - 1;
+                } else if (wp.currentStation === index - 1) {
+                    wp.currentStation = index;
+                }
+
+                const tempTimes = wp.stationTimes[wp.path.indexOf(index)];
+                const tempIdx = wp.path.indexOf(index);
+                const prevIdx = wp.path.indexOf(index - 1);
+                if (tempIdx !== -1 && prevIdx !== -1) {
+                    wp.stationTimes[tempIdx] = wp.stationTimes[prevIdx];
+                    wp.stationTimes[prevIdx] = tempTimes;
+                }
+            });
+
+            // 更新工作的站點
+            Object.keys(tasks).forEach(taskId => {
+                const task = tasks[taskId];
+                if (task.status === 'canceled') return;
+
+                if (task.stationIndex === index) {
+                    task.stationIndex = index - 1;
+                } else if (task.stationIndex === index - 1) {
+                    task.stationIndex = index;
+                }
+            });
+
+            localStorage.setItem('stations', JSON.stringify(stations));
+            localStorage.setItem('capacities', JSON.stringify(capacities));
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+
+            renderStationsList();
+            renderProcessingTimesInputs();
+            renderCapacities();
+            renderStations();
+            renderWorkpieces();
+            renderTasks();
+            renderTimelineCharts();
+            renderTimelineStationCheckboxes();
+            populateTimelineTaskStationDropdown();
+            addLog(`站點 ${stations[index].name} 已上移`);
+        }
+
+        function moveStationDown(index) {
+            if (index >= stations.length - 1) return;
+
+            // 交換 stations 陣列中的元素
+            [stations[index], stations[index + 1]] = [stations[index + 1], stations[index]];
+
+            // 同步更新 capacities 和 currentProcessingTimes
+            capacities = capacities.map(item => {
+                const processingTimes = [...item.processingTimes];
+                [processingTimes[index], processingTimes[index + 1]] = [processingTimes[index + 1], processingTimes[index]];
+                return { ...item, processingTimes };
+            });
+            [currentProcessingTimes[index], currentProcessingTimes[index + 1]] = [currentProcessingTimes[index + 1], currentProcessingTimes[index]];
+
+            // 更新工件的路徑
+            Object.keys(workpieces).forEach(wpId => {
+                const wp = workpieces[wpId];
+                if (wp.status === 'canceled') return;
+
+                wp.path = wp.path.map(stationIdx => {
+                    if (stationIdx === index) return index + 1;
+                    if (stationIdx === index + 1) return index;
+                    return stationIdx;
+                });
+
+                if (wp.currentStation === index) {
+                    wp.currentStation = index + 1;
+                } else if (wp.currentStation === index + 1) {
+                    wp.currentStation = index;
+                }
+
+                const tempTimes = wp.stationTimes[wp.path.indexOf(index)];
+                const tempIdx = wp.path.indexOf(index);
+                const nextIdx = wp.path.indexOf(index + 1);
+                if (tempIdx !== -1 && nextIdx !== -1) {
+                    wp.stationTimes[tempIdx] = wp.stationTimes[nextIdx];
+                    wp.stationTimes[nextIdx] = tempTimes;
+                }
+            });
+
+            // 更新工作的站點
+            Object.keys(tasks).forEach(taskId => {
+                const task = tasks[taskId];
+                if (task.status === 'canceled') return;
+
+                if (task.stationIndex === index) {
+                    task.stationIndex = index + 1;
+                } else if (task.stationIndex === index + 1) {
+                    task.stationIndex = index;
+                }
+            });
+
+            localStorage.setItem('stations', JSON.stringify(stations));
+            localStorage.setItem('capacities', JSON.stringify(capacities));
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+
+            renderStationsList();
+            renderProcessingTimesInputs();
+            renderCapacities();
+            renderStations();
+            renderWorkpieces();
+            renderTasks();
+            renderTimelineCharts();
+            renderTimelineStationCheckboxes();
+            populateTimelineTaskStationDropdown();
+            addLog(`站點 ${stations[index].name} 已下移`);
+        }
+
+        function deleteStation(index) {
+            const stationName = stations[index].name;
+            stations.splice(index, 1);
+            localStorage.setItem('stations', JSON.stringify(stations));
+
+            capacities = capacities.map(item => ({
+                capacity: item.capacity,
+                processingTimes: item.processingTimes.filter((_, i) => i !== index)
+            }));
+            localStorage.setItem('capacities', JSON.stringify(capacities));
+            currentProcessingTimes = currentProcessingTimes.filter((_, i) => i !== index);
+
+            Object.keys(workpieces).forEach(wpId => {
+                const wp = workpieces[wpId];
+                if (wp.status === 'canceled') return;
+
+                const pathIndex = wp.path.indexOf(index);
+                if (pathIndex !== -1) {
+                    wp.path = wp.path.filter(stationIdx => stationIdx !== index);
+                    wp.path = wp.path.map(stationIdx => stationIdx > index ? stationIdx - 1 : stationIdx);
+                    wp.stationTimes = wp.stationTimes.filter((_, i) => i !== pathIndex);
+                    if (wp.currentStation === index) {
+                        wp.currentStation = null;
+                    } else if (wp.currentStation > index) {
+                        wp.currentStation -= 1;
+                    }
+                }
+            });
+
+            Object.keys(workpieces).forEach(wpId => {
+                const wp = workpieces[wpId];
+                if (wp.status !== 'canceled' && wp.path.length === 0) {
+                    wp.status = 'canceled';
+                    wp.currentStation = null;
+                }
+            });
+
+            Object.keys(tasks).forEach(taskId => {
+                const task = tasks[taskId];
+                if (task.status === 'canceled') return;
+
+                if (task.stationIndex === index) {
+                    task.status = 'canceled';
+                } else if (task.stationIndex > index) {
+                    task.stationIndex -= 1;
+                }
+            });
+
+            updateStationTimesAfterDelete(index);
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+
+            renderStationsList();
+            renderProcessingTimesInputs();
+            renderCapacities();
+            renderStations();
+            renderWorkpieces();
+            renderTasks();
+            renderTimelineCharts();
+            renderTimelineStationCheckboxes();
+            populateTimelineTaskStationDropdown();
+            addLog(`已刪除站點 ${stationName}`);
+        }
+
+        function updateStationTimesAfterDelete(deletedIndex) {
+            const calculationDetails = [];
+            stations.forEach((station, stationIdx) => {
+                let lastCompletionTime = null;
+                Object.keys(workpieces)
+                    .map(wpId => ({ wpId, wp: workpieces[wpId] }))
+                    .filter(item => item.wp.status !== 'canceled')
+                    .sort((a, b) => (a.wp.stationTimes[0].startTime || Date.now()) - (b.wp.stationTimes[0].startTime || Date.now()))
+                    .forEach(({ wpId, wp }) => {
+                        const pathIndex = wp.path.indexOf(stationIdx);
+                        if (pathIndex === -1) return;
+
+                        const timeToStart = pathIndex === 0 ? wp.stationTimes[0].startTime : wp.stationTimes[pathIndex].startTime;
+                        if (lastCompletionTime && timeToStart < lastCompletionTime) {
+                            wp.stationTimes[pathIndex].startTime = lastCompletionTime;
+                            const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
+                            wp.stationTimes[pathIndex].endTime = lastCompletionTime + (processingTime * 60 * 1000);
+                        }
+
+                        lastCompletionTime = wp.stationTimes[pathIndex].endTime;
+
+                        calculationDetails.push({
+                            workpieceId: wpId,
+                            stationName: station.name,
+                            lastCompletionTimeAtStation: lastCompletionTime || null,
+                            startTimeForThisStation: wp.stationTimes[pathIndex].startTime,
+                            processingTime: getProcessingTimeForWorkpiece(wp, stationIdx),
+                            completionTime: wp.stationTimes[pathIndex].endTime
+                        });
+                    });
+                station.startTime = lastCompletionTime;
+            });
+
+            addMonitorLog(`刪除站點後更新時間`, calculationDetails);
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+        }
+
+        document.getElementById('addStation').addEventListener('click', () => {
+            const stationInput = document.getElementById('stationInput');
+            const positionSelect = document.getElementById('stationPosition');
+            const stationName = stationInput.value.trim();
+            const position = positionSelect.value;
+
+            if (!stationName) {
+                alert('請輸入站點名稱！');
+                return;
+            }
+            if (stations.some(station => station.name === stationName)) {
+                alert('此站點名稱已存在！');
+                return;
+            }
+
+            const newStation = { name: stationName, startTime: null };
+            let insertIndex;
+
+            if (position === 'start') {
+                insertIndex = 0;
+                stations.unshift(newStation);
+                capacities = capacities.map(item => ({
+                    capacity: item.capacity,
+                    processingTimes: [10, ...item.processingTimes]
+                }));
+                currentProcessingTimes.unshift(10);
+            } else if (position === 'end') {
+                insertIndex = stations.length;
+                stations.push(newStation);
+                capacities = capacities.map(item => ({
+                    capacity: item.capacity,
+                    processingTimes: [...item.processingTimes, 10]
+                }));
+                currentProcessingTimes.push(10);
+            } else {
+                insertIndex = parseInt(position.split('_')[1]);
+                stations.splice(insertIndex, 0, newStation);
+                capacities = capacities.map(item => ({
+                    capacity: item.capacity,
+                    processingTimes: [...item.processingTimes.slice(0, insertIndex), 10, ...item.processingTimes.slice(insertIndex)]
+                }));
+                currentProcessingTimes.splice(insertIndex, 0, 10);
+            }
+
+            localStorage.setItem('stations', JSON.stringify(stations));
+            localStorage.setItem('capacities', JSON.stringify(capacities));
+
+            renderStationsList();
+            renderProcessingTimesInputs();
+            renderCapacities();
+            renderStations();
+            renderWorkpieces();
+            renderTasks();
+            renderTimelineCharts();
+            renderTimelineStationCheckboxes();
+            populateTimelineTaskStationDropdown();
+            stationInput.value = '';
+            addLog(`已添加站點 ${stationName} 到位置 ${position === 'start' ? '最前面' : position === 'end' ? '最後面' : `在 ${stations[insertIndex + (position === 'start' ? 1 : 0)]?.name || '未知站點'} 之前`}`);
+        });
+
+        function renderProcessingTimesInputs() {
+            const container = document.getElementById('processingTimesContainer');
+            container.innerHTML = '';
+            stations.forEach((station, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex-1';
+                div.innerHTML = `
+                    <label class="block mb-2">${station.name}作業時間（分鐘）：</label>
+                    <input type="number" id="processingTime${index}" class="border p-2 rounded w-full" placeholder="輸入作業時間" min="0.1" step="0.1" />
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderCapacities() {
+            const capacityList = document.getElementById('capacityList');
+            const capacityMessage = document.getElementById('capacityListMessage');
+            capacityList.innerHTML = '';
+            
+            if (capacities.length === 0) {
+                capacityMessage.textContent = '尚未添加容量，請在上面輸入並添加。';
+            } else {
+                capacityMessage.textContent = '';
+                capacities.forEach((item, index) => {
+                    if (item && item.capacity && Array.isArray(item.processingTimes) && item.processingTimes.length === stations.length) {
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center mb-2';
+                        let processingTimesText = stations.map((station, idx) => `${station.name}: ${item.processingTimes[idx]}分`).join(', ');
+                        li.innerHTML = `
+                            <span>容量: ${item.capacity}, 作業時間（${processingTimesText}）</span>
+                            <button class="delete-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-index="${index}">刪除</button>
+                        `;
+                        capacityList.appendChild(li);
+                    }
+                });
+            }
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    capacities.splice(index, 1);
+                    localStorage.setItem('capacities', JSON.stringify(capacities));
+                    renderCapacities();
+                    populateTimelineCapacityDropdown();
+                });
+            });
+        }
+
+        document.getElementById('addCapacity').addEventListener('click', () => {
+            const capacityInput = document.getElementById('capacityInput');
+            const capacity = capacityInput.value.trim();
+            const processingTimes = stations.map((_, index) => {
+                const input = document.getElementById(`processingTime${index}`);
+                return parseFloat(input.value);
+            });
+
+            if (!capacity) {
+                alert('請輸入容量！');
+                return;
+            }
+            if (capacities.some(item => item.capacity === capacity)) {
+                alert('此容量已存在！');
+                return;
+            }
+            if (processingTimes.some(time => isNaN(time) || time < 0.1)) {
+                alert('請為所有站點輸入有效的作業時間（至少 0.1 分鐘）！');
+                return;
+            }
+
+            const newItem = {
+                capacity: capacity,
+                processingTimes: processingTimes
+            };
+            capacities.push(newItem);
+            localStorage.setItem('capacities', JSON.stringify(capacities));
+            capacityInput.value = '';
+            stations.forEach((_, index) => {
+                document.getElementById(`processingTime${index}`).value = '';
+            });
+            renderCapacities();
+            populateTimelineCapacityDropdown();
+        });
+
+        function populateTimelineCapacityDropdown() {
+            const capacitySelect = document.getElementById('timelineCapacitySelect');
+            const capacityMessage = document.getElementById('timelineCapacityMessage');
+            let capacities = [];
+            try {
+                capacities = JSON.parse(localStorage.getItem('capacities')) || [];
+            } catch (error) {
+                console.error('無法從 localStorage 載入容量數據：', error);
+                capacityMessage.textContent = '無法載入容量列表，請檢查瀏覽器設定或稍後再試。';
+                return;
+            }
+
+            capacitySelect.innerHTML = '<option value="">請選擇容量</option>';
+            if (capacities.length === 0) {
+                capacityMessage.textContent = '尚未添加容量，請前往“管理”頁籤添加。';
+            } else {
+                capacityMessage.textContent = '';
+                capacities.forEach(item => {
+                    if (item && item.capacity) {
+                        const option = document.createElement('option');
+                        option.value = item.capacity;
+                        option.textContent = item.capacity;
+                        capacitySelect.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        document.getElementById('timelineCapacitySelect').addEventListener('change', () => {
+            const selectedCapacity = document.getElementById('timelineCapacitySelect').value;
+            const capacityItem = capacities.find(item => item.capacity === selectedCapacity);
+            if (capacityItem && Array.isArray(capacityItem.processingTimes) && capacityItem.processingTimes.length === stations.length) {
+                currentProcessingTimes = [...capacityItem.processingTimes];
+                const timesText = stations.map((station, idx) => `${station.name} ${currentProcessingTimes[idx]}分`).join(', ');
+                addLog(`更改容量至 ${selectedCapacity}，新作業時間為：${timesText}`);
+            }
+        });
+
+        function renderStationCheckboxes() {
+            const container = document.getElementById('stationCheckboxes');
+            container.innerHTML = '';
+            stations.forEach((station, index) => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" name="station" value="${index}" ${index === 0 ? 'checked' : ''}> ${station.name}
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        function renderTimelineStationCheckboxes() {
+            const container = document.getElementById('timelineStationCheckboxes');
+            container.innerHTML = '';
+            stations.forEach((station, index) => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                    <input type="checkbox" name="timelineStation" value="${index}" ${index === 0 ? 'checked' : ''}> ${station.name}
+                `;
+                container.appendChild(label);
+            });
+        }
+
+        function getProcessingTimeForWorkpiece(workpiece, stationIndex) {
+            return workpiece.processingTimes[stationIndex];
+        }
+
+        function renderStations() {
+            const stationsDiv = document.getElementById('stations');
+            stationsDiv.innerHTML = '';
+            stations.forEach((station, index) => {
+                const stationDiv = document.createElement('div');
+                stationDiv.className = 'bg-white p-4 rounded shadow text-center';
+                stationDiv.dataset.stationIndex = index;
+
+                let workpieceItems = '';
+                const workpiecesAtStation = Object.keys(workpieces).filter(wpId => {
+                    const wp = workpieces[wpId];
+                    return wp.path.includes(index) && wp.status !== 'canceled';
+                });
+
+                workpiecesAtStation.forEach(wpId => {
+                    const wp = workpieces[wpId];
+                    const pathIndex = wp.path.indexOf(index);
+                    const startTime = wp.stationTimes[pathIndex].startTime;
+                    workpieceItems += `
+                        <div class="workpiece-item flex items-center justify-center mt-2 p-2 border rounded">
+                            <span class="mr-2">${wpId}</span>
+                            <span class="mr-2">開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算'}</span>
+                            <button class="remove-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-wp="${wpId}" data-from="${index}">抽單</button>
+                        </div>
+                    `;
+                });
+
+                stationDiv.innerHTML = `
+                    <h2 class="text-xl font-semibold">${station.name}</h2>
+                    <p class="mt-2">工件列表:</p>
+                    <div class="workpiece-container">${workpieceItems || '無工件'}</div>
+                `;
+                stationsDiv.appendChild(stationDiv);
+            });
+
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const workpieceId = btn.dataset.wp;
+                    const fromIndex = parseInt(btn.dataset.from);
+                    removeWorkpiece(workpieceId, fromIndex);
+                });
+            });
+        }
+
+        function renderWorkpieces() {
+            const workpieceList = document.getElementById('workpieceList');
+            const timelineWorkpieceList = document.getElementById('timelineWorkpieceList');
+            workpieceList.innerHTML = '';
+            timelineWorkpieceList.innerHTML = '';
+            Object.keys(workpieces).forEach(wpId => {
+                const wp = workpieces[wpId];
+                const tr = document.createElement('tr');
+                const startTimes = wp.stationTimes.map(time => time.startTime ? new Date(time.startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
+                const endTimes = wp.stationTimes.map(time => time.endTime ? new Date(time.endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
+                tr.innerHTML = `
+                    <td class="border p-2">${wpId}</td>
+                    <td class="border p-2">${wp.customer || '-'}</td>
+                    <td class="border p-2">${wp.capacity || '-'}</td>
+                    <td class="border p-2">${wp.product || '-'}</td>
+                    <td class="border p-2">${wp.isUrgent ? '是' : '否'}</td>
+                    <td class="border p-2">${wp.status === 'canceled' ? '抽單' : wp.currentStation !== null ? stations[wp.currentStation]?.name || '未知站點' : '已完成'}</td>
+                    <td class="border p-2">${wp.path.map(idx => stations[idx]?.name || '未知站點').join(' -> ')}</td>
+                    <td class="border p-2">${startTimes}</td>
+                    <td class="border p-2">${endTimes}</td>
+                `;
+                workpieceList.appendChild(tr);
+                timelineWorkpieceList.appendChild(tr.cloneNode(true));
+            });
+        }
+
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            const timelineTaskList = document.getElementById('timelineTaskList');
+            taskList.innerHTML = '';
+            timelineTaskList.innerHTML = '';
+            Object.keys(tasks).forEach(taskId => {
+                const task = tasks[taskId];
+                const tr = document.createElement('tr');
+                const startTime = task.startTime ? new Date(task.startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算';
+                const endTime = task.endTime ? new Date(task.endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算';
+                tr.innerHTML = `
+                    <td class="border p-2">${taskId}</td>
+                    <td class="border p-2">${task.taskType || '-'}</td>
+                    <td class="border p-2">${task.status === 'canceled' ? '已取消' : stations[task.stationIndex]?.name || '未知站點'}</td>
+                    <td class="border p-2">${startTime}</td>
+                    <td class="border p-2">${endTime}</td>
+                `;
+                taskList.appendChild(tr);
+                timelineTaskList.appendChild(tr.cloneNode(true));
+            });
+        }
+
+        function addLog(message) {
+            const logList = document.getElementById('logList');
+            const li = document.createElement('li');
+            li.textContent = `${new Date().toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei' })}: ${message}`;
+            logList.prepend(li);
+            const logContainer = document.getElementById('log');
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function addMonitorLog(operation, calculationDetails) {
+            const timestamp = new Date().toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei' });
+            const logEntry = {
+                timestamp,
+                operation,
+                calculationDetails
+            };
+            monitorLogs.unshift(logEntry);
+            renderMonitorLogs();
+        }
+
+        function renderMonitorLogs() {
+            const monitorList = document.getElementById('monitorList');
+            monitorList.innerHTML = '';
+            monitorLogs.forEach(log => {
+                const li = document.createElement('li');
+                li.className = 'mb-2';
+                li.innerHTML = `
+                    <strong>${log.timestamp}</strong>: ${log.operation}<br>
+                    ${log.calculationDetails.map(detail => `
+                        <span class="ml-4 block">${detail.workpieceId} 在 ${detail.stationName}: max(${detail.lastCompletionTimeAtStation ? new Date(detail.lastCompletionTimeAtStation).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '無'}, ${detail.startTimeForThisStation ? new Date(detail.startTimeForThisStation).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '無'}) + ${detail.processingTime}分 = ${detail.completionTime ? new Date(detail.completionTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '無'}</span>
+                    `).join('')}
+                `;
+                monitorList.appendChild(li);
+            });
+        }
+
+        function calculateNewWorkpieceTimes(wp, wpId, operation = '計算新工件時間') {
+            console.log(`計算工件 ${wpId} 的時間，操作：${operation}`);
+            const calculationDetails = [];
+            const newStationTimes = [];
+            let currentTime = wp.stationTimes[0].startTime || Date.now();
+
+            wp.path.forEach((stationIdx, pathIdx) => {
+                const station = stations[stationIdx];
+                if (!station) return;
+
+                const timeToStart = pathIdx === 0 ? currentTime : newStationTimes[pathIdx - 1].endTime;
+                const actualStartTime = timeToStart;
+                const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
+                const completionTimeAtStation = actualStartTime + (processingTime * 60 * 1000);
+
+                newStationTimes.push({
+                    startTime: actualStartTime,
+                    endTime: completionTimeAtStation
+                });
+
+                calculationDetails.push({
+                    workpieceId: wpId,
+                    stationName: station.name,
+                    lastCompletionTimeAtStation: null,
+                    startTimeForThisStation: actualStartTime,
+                    processingTime,
+                    completionTime: completionTimeAtStation
+                });
+
+                currentTime = completionTimeAtStation;
+                stations[stationIdx].startTime = completionTimeAtStation;
+            });
+
+            wp.stationTimes = newStationTimes;
+            addMonitorLog(operation, calculationDetails);
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+        }
+
+        function addWorkpiece(source = 'timeline') {
+            const stationSelector = 'timelineStation';
+            const capacitySelect = 'timelineCapacitySelect';
+            const customerInput = 'timelineCustomerInput';
+            const productInput = 'timelineProductInput';
+            const startTimeInput = 'timelineStartTimeInput';
+            const urgentInput = document.getElementById('urgentInput');
+
+            const selectedStations = Array.from(document.querySelectorAll(`input[name="${stationSelector}"]:checked`)).map(input => parseInt(input.value));
+            if (selectedStations.length === 0) {
+                addLog('請至少選擇一個站點');
+                return;
+            }
+
+            const uniqueStations = [...new Set(selectedStations)];
+
+            const capacity = document.getElementById(capacitySelect).value;
+            if (!capacity) {
+                addLog('請選擇容量');
+                return;
+            }
+
+            const customer = document.getElementById(customerInput).value.trim();
+            const product = document.getElementById(productInput).value.trim();
+            const startTimeInputValue = document.getElementById(startTimeInput).value;
+            const isUrgent = urgentInput.checked;
+
+            let startTime = null;
+            if (startTimeInputValue) {
+                const localDate = new Date(startTimeInputValue);
+                if (!isNaN(localDate.getTime())) {
+                    startTime = localDate.getTime();
+                } else {
+                    addLog('開始時間格式無效');
+                    return;
+                }
+            } else {
+                addLog('請輸入開始時間');
+                return;
+            }
+
+            workpieceId++;
+            const workpiece = String(workpieceId);
+            const startStationIndex = uniqueStations[0];
+
+            const initialStationTimes = [];
+            let currentTime = startTime;
+            uniqueStations.forEach((stationIdx, idx) => {
+                const processingTime = currentProcessingTimes[stationIdx];
+                const endTime = currentTime + (processingTime * 60 * 1000);
+                initialStationTimes.push({
+                    startTime: currentTime,
+                    endTime: endTime
+                });
+                currentTime = endTime;
+            });
+
+            workpieces[workpiece] = {
+                path: uniqueStations,
+                currentStation: startStationIndex,
+                stationTimes: initialStationTimes,
+                status: 'active',
+                customer: customer || '未指定',
+                capacity: capacity || '未指定',
+                product: product || '未指定',
+                processingTimes: [...currentProcessingTimes],
+                isUrgent: isUrgent
+            };
+
+            uniqueStations.forEach(stationIndex => {
+                const station = stations[stationIndex];
+                if (stationIndex === startStationIndex) {
+                    if (!station.startTime || startTime < station.startTime) {
+                        station.startTime = startTime;
+                    }
+                    addLog(`添加編號 ${workpiece} 至 ${station.name}，客戶: ${customer || '未指定'}，容量: ${capacity || '未指定'}，產品: ${product || '未指定'}，開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '未設置'}，急件: ${isUrgent ? '是' : '否'}`);
+                }
+            });
+
+            calculateNewWorkpieceTimes(workpieces[workpiece], workpiece, `添加工件 ${workpiece}`);
+            localStorage.setItem('workpieceId', workpieceId.toString());
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+
+            renderStations();
+            renderWorkpieces();
+            renderTimelineCharts();
+
+            document.getElementById(capacitySelect).value = '';
+            document.getElementById(customerInput).value = '';
+            document.getElementById(productInput).value = '';
+            document.getElementById(startTimeInput).value = '';
+            urgentInput.checked = false;
+            console.log('添加工件後，重置時間選擇器為空白並取消急件勾選');
+
+            switchTab('timeline');
+        }
+
+        function addTask(source = 'timeline') {
+            const taskTypeSelect = 'timelineTaskTypeSelect';
+            const startTimeInput = 'timelineTaskStartTimeInput';
+            const endTimeInput = 'timelineTaskEndTimeInput';
+            const stationSelect = 'timelineTaskStationSelect';
+
+            const taskType = document.getElementById(taskTypeSelect).value;
+            if (!taskType) {
+                addLog('請選擇作業種類');
+                return;
+            }
+
+            const startTimeInputValue = document.getElementById(startTimeInput).value;
+            const endTimeInputValue = document.getElementById(endTimeInput).value;
+            const stationIndex = parseInt(document.getElementById(stationSelect).value);
+
+            if (isNaN(stationIndex)) {
+                addLog('請選擇站點');
+                return;
+            }
+
+            let startTime = null;
+            if (startTimeInputValue) {
+                const localDate = new Date(startTimeInputValue);
+                if (!isNaN(localDate.getTime())) {
+                    startTime = localDate.getTime();
+                } else {
+                    addLog('開始時間格式無效');
+                    return;
+                }
+            } else {
+                addLog('請輸入開始時間');
+                return;
+            }
+
+            let endTime = null;
+            if (endTimeInputValue) {
+                const localDate = new Date(endTimeInputValue);
+                if (!isNaN(localDate.getTime())) {
+                    endTime = localDate.getTime();
+                } else {
+                    addLog('結束時間格式無效');
+                    return;
+                }
+            } else {
+                addLog('請輸入結束時間');
+                return;
+            }
+
+            if (endTime <= startTime) {
+                addLog('結束時間必須晚於開始時間');
+                return;
+            }
+
+            taskId++;
+            const task = String(taskId);
+
+            tasks[task] = {
+                taskType: taskType,
+                stationIndex: stationIndex,
+                startTime: startTime,
+                endTime: endTime,
+                status: 'active'
+            };
+
+            const station = stations[stationIndex];
+            addLog(`添加工作編號 ${task} 至 ${station.name}，作業種類: ${taskType}，時間: ${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 至 ${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+
+            localStorage.setItem('taskId', taskId.toString());
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+
+            renderTasks();
+            renderTimelineCharts();
+
+            document.getElementById(taskTypeSelect).value = '';
+            document.getElementById(stationSelect).value = '';
+            document.getElementById(startTimeInput).value = '';
+            document.getElementById(endTimeInput).value = '';
+            console.log('添加工作後，重置時間選擇器為空白');
+
+            switchTab('timeline');
+        }
+
+        function removeWorkpiece(workpieceId, fromIndex) {
+            const fromStation = stations[fromIndex];
+            const wp = workpieces[workpieceId];
+            if (wp.status === 'canceled') {
+                addLog(`編號 ${workpieceId} 已抽單`);
+                return;
+            }
+
+            wp.status = 'canceled';
+            wp.currentStation = null;
+            addLog(`已抽單編號 ${workpieceId} 從 ${fromStation?.name || '未知站點'} 站`);
+
+            const calculationDetails = [];
+            stations.forEach((station, stationIdx) => {
+                let lastCompletionTime = null;
+                Object.keys(workpieces)
+                    .map(wpId => ({ wpId, wp: workpieces[wpId] }))
+                    .filter(item => item.wp.status !== 'canceled')
+                    .sort((a, b) => (a.wp.stationTimes[0].startTime || Date.now()) - (b.wp.stationTimes[0].startTime || Date.now()))
+                    .forEach(({ wpId, wp }) => {
+                        const pathIndex = wp.path.indexOf(stationIdx);
+                        if (pathIndex === -1) return;
+
+                        const timeToStart = pathIndex === 0 ? wp.stationTimes[0].startTime : wp.stationTimes[pathIndex].startTime;
+                        if (lastCompletionTime && timeToStart < lastCompletionTime) {
+                            wp.stationTimes[pathIndex].startTime = lastCompletionTime;
+                            const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
+                            wp.stationTimes[pathIndex].endTime = lastCompletionTime + (processingTime * 60 * 1000);
+                        }
+
+                        lastCompletionTime = wp.stationTimes[pathIndex].endTime;
+
+                        calculationDetails.push({
+                            workpieceId: wpId,
+                            stationName: station.name,
+                            lastCompletionTimeAtStation: lastCompletionTime || null,
+                            startTimeForThisStation: wp.stationTimes[pathIndex].startTime,
+                            processingTime: getProcessingTimeForWorkpiece(wp, stationIdx),
+                            completionTime: wp.stationTimes[pathIndex].endTime
+                        });
+                    });
+                station.startTime = lastCompletionTime;
+            });
+
+            addMonitorLog(`移除工件 ${workpieceId} 從 ${fromStation?.name || '未知站點'} 站`, calculationDetails);
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+            renderStations();
+            renderWorkpieces();
+            renderTimelineCharts();
+        }
+
+        function resetSystem() {
+            stations.forEach(station => {
+                station.startTime = null;
+            });
+            Object.keys(workpieces).forEach(wp => delete workpieces[wp]);
+            Object.keys(tasks).forEach(task => delete tasks[task]);
+            workpieceId = 0;
+            taskId = 0;
+            currentProcessingTimes = Array(stations.length).fill(10);
+            document.getElementById('logList').innerHTML = '';
+            monitorLogs = [];
+            localStorage.setItem('workpieceId', '0');
+            localStorage.setItem('taskId', '0');
+            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            addLog('系統已重置');
+            renderStations();
+            renderWorkpieces();
+            renderTasks();
+            renderMonitorLogs();
+            renderTimelineCharts();
+
+            document.getElementById('timelineStartTimeInput').value = '';
+            document.getElementById('timelineTaskStartTimeInput').value = '';
+            document.getElementById('timelineTaskEndTimeInput').value = '';
+            console.log('重置系統，設置時間選擇器為空白');
+        }
+
+        const workpieceColors = {};
+        const taskColors = {};
+        function getWorkpieceColor(workpieceId) {
+            if (!workpieceColors[workpieceId]) {
+                let hash = 0;
+                for (let i = 0; i < workpieceId.length; i++) {
+                    hash = workpieceId.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const color = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+                workpieceColors[workpieceId] = `#${"00000".substring(0, 6 - color.length) + color}`;
+            }
+            return workpieceColors[workpieceId];
+        }
+
+        function getTaskColor(taskId) {
+            if (!taskColors[taskId]) {
+                let hash = 0;
+                for (let i = 0; i < taskId.length; i++) {
+                    hash = taskId.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const hue = (hash % 360);
+                taskColors[taskId] = `hsl(${hue}, 70%, 50%)`;
+            }
+            return taskColors[taskId];
+        }
+
+        function renderTimelineCharts() {
+            const existingTooltips = document.querySelectorAll('.custom-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
+
+            // 清空 taskColors 緩存，確保每次渲染重新生成顏色
+            Object.keys(taskColors).forEach(key => delete taskColors[key]);
+            console.log('已清空 taskColors 緩存，重新生成顏色');
+
+            const timelineCharts = document.getElementById('timelineCharts');
+            if (!timelineCharts) {
+                console.error('時間軸容器未找到');
+                return;
+            }
+
+            console.log('開始渲染時間軸');
+
+            timelineCharts.innerHTML = `
+                <h2 class="text-xl font-semibold mb-2">作業時間軸</h2>
+            `;
+
+            const dateFilter = document.getElementById('dateFilter');
+            if (!dateFilter.value) {
+                console.warn('日期過濾器值為空，使用當前日期');
+                dateFilter.value = new Date().toISOString().split('T')[0];
+            }
+
+            const [year, month, day] = dateFilter.value.split('-').map(Number);
+            const todayStart = new Date(year, month - 1, day, 0, 0, 0).getTime();
+            const todayEnd = new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
+
+            const timelineWrapper = document.createElement('div');
+            timelineWrapper.className = 'timeline-wrapper';
+
+            const stationLabels = document.createElement('div');
+            stationLabels.className = 'station-labels';
+            const spacer = document.createElement('div');
+            spacer.className = 'station-label-spacer';
+            stationLabels.appendChild(spacer);
+            stations.forEach(station => {
+                const stationLabel = document.createElement('div');
+                stationLabel.className = 'station-label';
+                stationLabel.textContent = station.name;
+                stationLabels.appendChild(stationLabel);
+            });
+
+            const timeline = document.createElement('div');
+            timeline.className = 'timeline';
+
+            const timelineAxis = document.createElement('div');
+            timelineAxis.className = 'timeline-axis';
+            for (let halfHour = 0; halfHour < 48; halfHour++) {
+                const hour = Math.floor(halfHour / 2);
+                const minute = (halfHour % 2) * 30;
+                const timeLabel = `${hour}:${minute.toString().padStart(2, '0')}`;
+                const halfHourDiv = document.createElement('div');
+                halfHourDiv.className = 'timeline-half-hour';
+                halfHourDiv.textContent = timeLabel;
+                timelineAxis.appendChild(halfHourDiv);
+            }
+            timeline.appendChild(timelineAxis);
+
+            stations.forEach((station, stationIndex) => {
+                const stationRow = document.createElement('div');
+                stationRow.className = 'timeline-station';
+
+                const timelineTasks = document.createElement('div');
+                timelineTasks.className = 'timeline-tasks';
+
+                let workpieceTasks = [];
+                Object.keys(workpieces).forEach(wpId => {
+                    const wp = workpieces[wpId];
+                    if (wp.status === 'canceled') return;
+
+                    const pathIndex = wp.path.indexOf(stationIndex);
+                    if (pathIndex === -1) return;
+
+                    const startTime = wp.stationTimes[pathIndex].startTime;
+                    const endTime = wp.stationTimes[pathIndex].endTime;
+
+                    if (!startTime || !endTime) {
+                        console.warn(`工件 ${wpId} 在站點 ${stationIndex} 的時間無效：startTime=${startTime}, endTime=${endTime}`);
+                        return;
+                    }
+
+                    if (endTime < todayStart || startTime > todayEnd) {
+                        console.log(`工件 ${wpId} 在站點 ${stationIndex} 的時間不在當前日期範圍內：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayStart=${new Date(todayStart).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayEnd=${new Date(todayEnd).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+                        return;
+                    }
+
+                    const adjustedStartTime = Math.max(startTime, todayStart);
+                    const adjustedEndTime = Math.min(endTime, todayEnd);
+
+                    workpieceTasks.push({ wpId, startTime: adjustedStartTime, endTime: adjustedEndTime, pathIndex });
+                });
+
+                let standaloneTasks = [];
+                Object.keys(tasks).forEach(taskId => {
+                    const task = tasks[taskId];
+                    if (task.status === 'canceled') return;
+
+                    if (task.stationIndex !== stationIndex) return;
+
+                    const startTime = task.startTime;
+                    const endTime = task.endTime;
+
+                    if (!startTime || !endTime) {
+                        console.warn(`工作 ${taskId} 在站點 ${stationIndex} 的時間無效：startTime=${startTime}, endTime=${endTime}`);
+                        return;
+                    }
+
+                    if (endTime < todayStart || startTime > todayEnd) {
+                        console.log(`工作 ${taskId} 在站點 ${stationIndex} 的時間不在當前日期範圍內：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayStart=${new Date(todayStart).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayEnd=${new Date(todayEnd).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+                        return;
+                    }
+
+                    const adjustedStartTime = Math.max(startTime, todayStart);
+                    const adjustedEndTime = Math.min(endTime, todayEnd);
+
+                    standaloneTasks.push({ taskId, startTime: adjustedStartTime, endTime: adjustedEndTime });
+                });
+
+                console.log(`站點 ${station.name} 的工件任務數量：${workpieceTasks.length}，獨立工作數量：${standaloneTasks.length}`);
+
+                const allTasks = [
+                    ...workpieceTasks.map(task => ({ type: 'workpiece', ...task })),
+                    ...standaloneTasks.map(task => ({ type: 'task', ...task }))
+                ];
+                allTasks.sort((a, b) => a.startTime - b.startTime);
+
+                allTasks.forEach(task => {
+                    const isWorkpiece = task.type === 'workpiece';
+                    const id = isWorkpiece ? task.wpId : task.taskId;
+                    const startTime = task.startTime;
+                    const endTime = task.endTime;
+                    const pathIndex = isWorkpiece ? task.pathIndex : null;
+                    const data = isWorkpiece ? workpieces[id] : tasks[id];
+
+                    const minutesSinceDayStartStart = (startTime - todayStart) / 1000 / 60;
+                    const minutesSinceDayStartEnd = (endTime - todayStart) / 1000 / 60;
+                    const left = minutesSinceDayStartStart * (40 / 30);
+                    const width = (minutesSinceDayStartEnd - minutesSinceDayStartStart) * (40 / 30);
+
+                    if (width <= 0) {
+                        console.warn(`${isWorkpiece ? '工件' : '工作'} ${id} 的工作方塊寬度無效：${width}`);
+                        return;
+                    }
+
+                    console.log(`渲染${isWorkpiece ? '工件' : '工作'} ${id} 在站點 ${station.name}：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, left=${left}, width=${width}`);
+
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = 'task';
+                    taskDiv.style.left = `${left}px`;
+                    taskDiv.style.width = `${width}px`;
+
+                    let taskColor;
+                    if (isWorkpiece) {
+                        if (data.isUrgent) {
+                            taskColor = '#ff0000'; // 急件顯示紅色
+                            console.log(`工件 ${id} 為急件，背景顏色設為紅色：${taskColor}`);
+                        } else {
+                            taskColor = getWorkpieceColor(id);
+                            console.log(`工件 ${id} 非急件，使用生成顏色：${taskColor}`);
+                        }
+                    } else {
+                        taskColor = getTaskColor(id);
+                        console.log(`工作 ${id} 使用生成顏色：${taskColor}`);
+                    }
+                    taskDiv.style.backgroundColor = taskColor;
+
+                    if (isWorkpiece) {
+                        taskDiv.dataset.workpieceId = id;
+                        taskDiv.dataset.pathIndex = pathIndex;
+                    } else {
+                        taskDiv.dataset.taskId = id;
+                    }
+                    taskDiv.dataset.stationIndex = stationIndex;
+
+                    const label = document.createElement('span');
+                    label.textContent = isWorkpiece ? (data.product || '未指定') : (data.taskType || '未指定');
+                    taskDiv.appendChild(label);
+
+                    const startTimeFormatted = new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+                    const endTimeFormatted = new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+                    const tooltipText = isWorkpiece
+                        ? `時間: (${startTimeFormatted} - ${endTimeFormatted})\n客戶: ${data.customer || '未指定'}\n產品: ${data.product || '未指定'}\n容量: ${data.capacity || '未指定'}\n急件: ${data.isUrgent ? '是' : '否'}`
+                        : `時間: (${startTimeFormatted} - ${endTimeFormatted})\n作業種類: ${data.taskType || '未指定'}`;
+
+                    let tooltip = null;
+
+                    taskDiv.addEventListener('mouseover', (e) => {
+                        if (tooltip) return;
+                        tooltip = document.createElement('div');
+                        tooltip.className = 'custom-tooltip';
+                        tooltip.textContent = tooltipText;
+                        document.body.appendChild(tooltip);
+
+                        const rect = taskDiv.getBoundingClientRect();
+                        tooltip.style.left = `${e.pageX + 10}px`;
+                        tooltip.style.top = `${e.pageY + 10}px`;
+                    });
+
+                    taskDiv.addEventListener('mousemove', (e) => {
+                        if (tooltip) {
+                            tooltip.style.left = `${e.pageX + 10}px`;
+                            tooltip.style.top = `${e.pageY + 10}px`;
+                        }
+                    });
+
+                    taskDiv.addEventListener('mouseout', () => {
+                        if (tooltip) {
+                            tooltip.remove();
+                            tooltip = null;
+                        }
+                    });
+
+                    taskDiv.addEventListener('dblclick', (e) => {
+                        if (tooltip) {
+                            tooltip.remove();
+                            tooltip = null;
+                        }
+
+                        const existingModal = document.querySelector('.datetime-modal');
+                        if (existingModal) {
+                            existingModal.remove();
+                        }
+
+                        const modal = document.createElement('div');
+                        modal.className = 'datetime-modal';
+                        modal.style.left = `${e.pageX + 10}px`;
+                        modal.style.top = `${e.pageY + 10}px`;
+
+                        const currentStartTime = new Date(startTime).toISOString().slice(0, 16);
+                        const currentEndTime = new Date(endTime).toISOString().slice(0, 16);
+                        console.log(`雙擊方塊 ${isWorkpiece ? '工件' : '工作'} ${id}，原始開始時間: ${startTimeFormatted}，原始結束時間: ${endTimeFormatted}`);
+                        console.log(`模態框預設開始時間: ${currentStartTime}，預設結束時間: ${currentEndTime}`);
+
+                        modal.innerHTML = `
+                            <label>${isWorkpiece ? `編號 ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間` : `工作 ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`}</label>
+                            <label>當前開始時間: ${startTimeFormatted}</label>
+                            <input type="datetime-local" id="newStartTimeInput" value="${currentStartTime}">
+                            <label>當前結束時間: ${endTimeFormatted}</label>
+                            <input type="datetime-local" id="newEndTimeInput" value="${currentEndTime}">
+                            <div class="buttons">
+                                <button class="confirm-btn">確認</button>
+                                <button class="cancel-btn">取消</button>
+                            </div>
+                        `;
+
+                        document.body.appendChild(modal);
+
+                        modal.querySelector('.confirm-btn').addEventListener('click', () => {
+                            const newStartTimeInput = modal.querySelector('#newStartTimeInput').value;
+                            const newEndTimeInput = modal.querySelector('#newEndTimeInput').value;
+                            const newStartDate = new Date(newStartTimeInput);
+                            const newEndDate = new Date(newEndTimeInput);
+
+                            if (!isNaN(newStartDate.getTime()) && !isNaN(newEndDate.getTime())) {
+                                const newStartTimeMs = newStartDate.getTime();
+                                const newEndTimeMs = newEndDate.getTime();
+
+                                if (newEndTimeMs <= newStartTimeMs) {
+                                    alert('結束時間必須晚於開始時間！');
+                                    return;
+                                }
+
+                                let hasConflict = false;
+
+                                Object.keys(workpieces).forEach(otherWpId => {
+                                    if (isWorkpiece && otherWpId === id) return;
+                                    const otherWp = workpieces[otherWpId];
+                                    if (otherWp.status === 'canceled') return;
+
+                                    const otherPathIndex = otherWp.path.indexOf(stationIndex);
+                                    if (otherPathIndex === -1) return;
+
+                                    const otherStartTime = otherWp.stationTimes[otherPathIndex].startTime;
+                                    const otherEndTime = otherWp.stationTimes[otherPathIndex].endTime;
+
+                                    if (newStartTimeMs < otherEndTime && newEndTimeMs > otherStartTime) {
+                                        hasConflict = true;
+                                    }
+                                });
+
+                                Object.keys(tasks).forEach(otherTaskId => {
+                                    if (!isWorkpiece && otherTaskId === id) return;
+                                    const otherTask = tasks[otherTaskId];
+                                    if (otherTask.status === 'canceled') return;
+
+                                    if (otherTask.stationIndex !== stationIndex) return;
+
+                                    const otherStartTime = otherTask.startTime;
+                                    const otherEndTime = otherTask.endTime;
+
+                                    if (newStartTimeMs < otherEndTime && newEndTimeMs > otherStartTime) {
+                                        hasConflict = true;
+                                    }
+                                });
+
+                                if (hasConflict) {
+                                    alert('作業未完成：該站點在調整後的時間已有其他作業');
+                                    modal.remove();
+                                    return;
+                                }
+
+                                if (isWorkpiece) {
+                                    const currentStationIdxInPath = data.path.indexOf(stationIndex);
+                                    if (currentStationIdxInPath > 0) {
+                                        const prevStationIdx = data.path[currentStationIdxInPath - 1];
+                                        const prevEndTime = data.stationTimes[currentStationIdxInPath - 1].endTime;
+                                        if (newStartTimeMs < prevEndTime) {
+                                            alert('作業未完成：前一站在調整後的時間尚未完成');
+                                            modal.remove();
+                                            return;
+                                        }
+                                    }
+
+                                    data.stationTimes[pathIndex] = {
+                                        startTime: newStartTimeMs,
+                                        endTime: newEndTimeMs
+                                    };
+                                } else {
+                                    data.startTime = newStartTimeMs;
+                                    data.endTime = newEndTimeMs;
+                                }
+
+                                addMonitorLog(`修改${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`, [{
+                                    workpieceId: id,
+                                    stationName: stations[stationIndex]?.name || '未知站點',
+                                    lastCompletionTimeAtStation: null,
+                                    startTimeForThisStation: newStartTimeMs,
+                                    processingTime: (newEndTimeMs - newStartTimeMs) / (60 * 1000),
+                                    completionTime: newEndTimeMs
+                                }]);
+
+                                // 更新 localStorage
+                                localStorage.setItem('workpieces', JSON.stringify(workpieces));
+                                localStorage.setItem('tasks', JSON.stringify(tasks));
+
+                                renderStations();
+                                renderWorkpieces();
+                                renderTasks();
+                                renderTimelineCharts();
+                                addLog(`${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間已更新為 ${newStartTimeInput} 至 ${newEndTimeInput}`);
+                            } else {
+                                alert('輸入的時間格式無效，請使用 YYYY-MM-DDThh:mm 格式！');
+                            }
+                            modal.remove();
+                        });
+
+                        modal.querySelector('.cancel-btn').addEventListener('click', () => {
+                            modal.remove();
+                        });
+                    });
+
+                    timelineTasks.appendChild(taskDiv);
+                });
+
+                stationRow.appendChild(timelineTasks);
+                timeline.appendChild(stationRow);
+            });
+
+            timelineWrapper.appendChild(stationLabels);
+            timelineWrapper.appendChild(timeline);
+            timelineCharts.appendChild(timelineWrapper);
+
+            timelineCharts.offsetHeight;
+            console.log('時間軸渲染完成');
+        }
+
+        document.getElementById('prevDay').addEventListener('click', () => {
+            const dateFilter = document.getElementById('dateFilter');
+            const currentDate = new Date(dateFilter.value);
+            currentDate.setDate(currentDate.getDate() - 1);
+            dateFilter.value = currentDate.toISOString().split('T')[0];
+            renderTimelineCharts();
+        });
+
+        document.getElementById('nextDay').addEventListener('click', () => {
+            const dateFilter = document.getElementById('dateFilter');
+            const currentDate = new Date(dateFilter.value);
+            currentDate.setDate(currentDate.getDate() + 1);
+            dateFilter.value = currentDate.toISOString().split('T')[0];
+            renderTimelineCharts();
+        });
+
+        document.getElementById('dateFilter').addEventListener('change', () => {
+            renderTimelineCharts();
+        });
+
+        document.getElementById('timelineAddWorkpiece').addEventListener('click', () => addWorkpiece('timeline'));
+        document.getElementById('timelineAddTask').addEventListener('click', () => addTask('timeline'));
+        document.getElementById('reset').addEventListener('click', resetSystem);
+
+        // 初始化時間選擇器為空白
+        document.getElementById('timelineStartTimeInput').value = '';
+        document.getElementById('timelineTaskStartTimeInput').value = '';
+        document.getElementById('timelineTaskEndTimeInput').value = '';
+        console.log('初始化時間選擇器為空白');
+
+        renderStations();
+        renderWorkpieces();
+        renderTasks();
+        renderCapacities();
+        renderTaskTypes();
+        renderMonitorLogs();
+        renderTimelineCharts();
+        renderStationCheckboxes();
+        renderTimelineStationCheckboxes();
+        renderStationsList();
+        renderProcessingTimesInputs();
+        populateTimelineCapacityDropdown();
+        populateTimelineTaskTypeDropdown();
+        populateTimelineTaskStationDropdown();
+    </script>
+</body>
+</html>
+</xaiArtifact>
