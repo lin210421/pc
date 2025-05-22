@@ -425,7 +425,7 @@
                     <label class="block mb-2">選擇日期：</label>
                     <div class="flex gap-2">
                         <button id="prevDay" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-1 px-2 rounded">←</button>
-                        <input type="date" id="dateFilter" class="border p-2 rounded w-full" value="2025-05-20" />
+                        <input type="date" id="dateFilter" class="border p-2 rounded w-full" /> <!-- 移除 value="2025-05-20" -->
                         <button id="nextDay" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-1 px-2 rounded">→</button>
                     </div>
                 </div>
@@ -750,6 +750,14 @@
                 populateTimelineTaskTypeDropdown();
                 populateTimelineTaskStationDropdown();
                 renderTimelineStationCheckboxes();
+
+                // 設置當天日期
+                const dateFilter = document.getElementById('dateFilter');
+                if (!dateFilter.value) {
+                    const today = new Date();
+                    dateFilter.value = today.toISOString().split('T')[0]; // 設置為當天日期，例如 2025-05-22
+                    console.log(`設置日期過濾器為當天日期：${dateFilter.value}`);
+                }
 
                 // 確保 DOM 佈局完成後渲染
                 const ensureLayoutAndRender = () => {
@@ -2129,16 +2137,19 @@
 
             console.log('開始渲染時間軸');
 
+            // 保存當前滾動位置
+            const timelineElement = document.querySelector('.timeline');
+            let scrollPosition = 0;
+            if (timelineElement) {
+                scrollPosition = timelineElement.scrollLeft;
+                console.log(`保存滾動位置：${scrollPosition}`);
+            }
+
             timelineCharts.innerHTML = `
                 <h2 class="text-xl font-semibold mb-2">作業時間軸</h2>
             `;
 
             const dateFilter = document.getElementById('dateFilter');
-            if (!dateFilter.value) {
-                console.warn('日期過濾器值為空，使用當前日期');
-                dateFilter.value = new Date().toISOString().split('T')[0];
-            }
-
             const [year, month, day] = dateFilter.value.split('-').map(Number);
             const todayStart = new Date(year, month - 1, day, 0, 0, 0).getTime();
             const todayEnd = new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
@@ -2183,346 +2194,352 @@
 
                 let workpieceTasks = [];
                 Object.keys(workpieces).forEach(wpId => {
-                const wp = workpieces[wpId];
-                // 移除狀態過濾條件，顯示所有工件
-                const pathIndex = wp.path.indexOf(stationIndex);
-                if (pathIndex === -1) return;
+                    const wp = workpieces[wpId];
+                    // 過濾掉「已抽單」的工件，不顯示在時間軸上
+                    if (wp.status === '已抽單') {
+                        console.log(`工件 ${wpId} 已抽單，不顯示在時間軸上`);
+                        return;
+                    }
 
-                const startTime = wp.stationTimes[pathIndex].startTime;
-                const endTime = wp.stationTimes[pathIndex].endTime;
+                    const pathIndex = wp.path.indexOf(stationIndex);
+                    if (pathIndex === -1) return;
 
-                if (!startTime || !endTime) {
-                    console.warn(`工件 ${wpId} 在站點 ${stationIndex} 的時間無效：startTime=${startTime}, endTime=${endTime}`);
-                    return;
-                }
+                    const startTime = wp.stationTimes[pathIndex].startTime;
+                    const endTime = wp.stationTimes[pathIndex].endTime;
 
-                if (endTime < todayStart || startTime > todayEnd) {
-                    console.log(`工件 ${wpId} 在站點 ${stationIndex} 的時間不在當前日期範圍內：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayStart=${new Date(todayStart).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayEnd=${new Date(todayEnd).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
-                    return;
-                }
+                    if (!startTime || !endTime) {
+                        console.warn(`工件 ${wpId} 在站點 ${stationIndex} 的時間無效：startTime=${startTime}, endTime=${endTime}`);
+                        return;
+                    }
 
-                const adjustedStartTime = Math.max(startTime, todayStart);
-                const adjustedEndTime = Math.min(endTime, todayEnd);
+                    if (endTime < todayStart || startTime > todayEnd) {
+                        console.log(`工件 ${wpId} 在站點 ${stationIndex} 的時間不在當前日期範圍內：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayStart=${new Date(todayStart).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayEnd=${new Date(todayEnd).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+                        return;
+                    }
 
-                workpieceTasks.push({ wpId, startTime: adjustedStartTime, endTime: adjustedEndTime, pathIndex });
+                    const adjustedStartTime = Math.max(startTime, todayStart);
+                    const adjustedEndTime = Math.min(endTime, todayEnd);
+
+                    workpieceTasks.push({ wpId, startTime: adjustedStartTime, endTime: adjustedEndTime, pathIndex });
                 });
 
                 let standaloneTasks = [];
                 Object.keys(tasks).forEach(taskId => {
-                const task = tasks[taskId];
-                if (task.status === '已抽單') return;
+                    const task = tasks[taskId];
+                    if (task.status === '已抽單') return;
 
-                if (task.stationIndex !== stationIndex) return;
+                    if (task.stationIndex !== stationIndex) return;
 
-                const startTime = task.startTime;
-                const endTime = task.endTime;
+                    const startTime = task.startTime;
+                    const endTime = task.endTime;
 
-                if (!startTime || !endTime) {
-                    console.warn(`工作 ${taskId} 在站點 ${stationIndex} 的時間無效：startTime=${startTime}, endTime=${endTime}`);
-                    return;
-                }
+                    if (!startTime || !endTime) {
+                        console.warn(`工作 ${taskId} 在站點 ${stationIndex} 的時間無效：startTime=${startTime}, endTime=${endTime}`);
+                        return;
+                    }
 
-                if (endTime < todayStart || startTime > todayEnd) {
-                    console.log(`工作 ${taskId} 在站點 ${stationIndex} 的時間不在當前日期範圍內：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayStart=${new Date(todayStart).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayEnd=${new Date(todayEnd).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
-                    return;
-                }
+                    if (endTime < todayStart || startTime > todayEnd) {
+                        console.log(`工作 ${taskId} 在站點 ${stationIndex} 的時間不在當前日期範圍內：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayStart=${new Date(todayStart).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, todayEnd=${new Date(todayEnd).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+                        return;
+                    }
 
-                const adjustedStartTime = Math.max(startTime, todayStart);
-                const adjustedEndTime = Math.min(endTime, todayEnd);
+                    const adjustedStartTime = Math.max(startTime, todayStart);
+                    const adjustedEndTime = Math.min(endTime, todayEnd);
 
-                standaloneTasks.push({ taskId, startTime: adjustedStartTime, endTime: adjustedEndTime });
+                    standaloneTasks.push({ taskId, startTime: adjustedStartTime, endTime: adjustedEndTime });
                 });
 
                 console.log(`站點 ${station.name} 的工件任務數量：${workpieceTasks.length}，獨立工作數量：${standaloneTasks.length}`);
 
                 const allTasks = [
-                ...workpieceTasks.map(task => ({ type: 'workpiece', ...task })),
-                ...standaloneTasks.map(task => ({ type: 'task', ...task }))
+                    ...workpieceTasks.map(task => ({ type: 'workpiece', ...task })),
+                    ...standaloneTasks.map(task => ({ type: 'task', ...task }))
                 ];
 
-                // 按編號從大到小排序（較新創建的在前面）
                 allTasks.sort((a, b) => {
-                const idA = a.type === 'workpiece' ? parseInt(a.wpId) : parseInt(a.taskId);
-                const idB = b.type === 'workpiece' ? parseInt(b.wpId) : parseInt(b.taskId);
-                return idB - idA; // 編號大的（較新的）排在前面
+                    const idA = a.type === 'workpiece' ? parseInt(a.wpId) : parseInt(a.taskId);
+                    const idB = b.type === 'workpiece' ? parseInt(b.wpId) : parseInt(b.taskId);
+                    return idB - idA; // 編號大的（較新的）排在前面
                 });
 
-                // 設置 z-index，較新創建的方塊有更高的 z-index
                 let zIndexCounter = allTasks.length;
 
                 allTasks.forEach(task => {
-                const isWorkpiece = task.type === 'workpiece';
-                const id = isWorkpiece ? task.wpId : task.taskId;
-                const startTime = task.startTime;
-                const endTime = task.endTime;
-                const pathIndex = isWorkpiece ? task.pathIndex : null;
-                const data = isWorkpiece ? workpieces[id] : tasks[id];
+                    const isWorkpiece = task.type === 'workpiece';
+                    const id = isWorkpiece ? task.wpId : task.taskId;
+                    const startTime = task.startTime;
+                    const endTime = task.endTime;
+                    const pathIndex = isWorkpiece ? task.pathIndex : null;
+                    const data = isWorkpiece ? workpieces[id] : tasks[id];
 
-                const minutesSinceDayStartStart = (startTime - todayStart) / 1000 / 60;
-                const minutesSinceDayStartEnd = (endTime - todayStart) / 1000 / 60;
-                const left = minutesSinceDayStartStart * (40 / 30);
-                const width = (minutesSinceDayStartEnd - minutesSinceDayStartStart) * (40 / 30);
+                    const minutesSinceDayStartStart = (startTime - todayStart) / 1000 / 60;
+                    const minutesSinceDayStartEnd = (endTime - todayStart) / 1000 / 60;
+                    const left = minutesSinceDayStartStart * (40 / 30);
+                    const width = (minutesSinceDayStartEnd - minutesSinceDayStartStart) * (40 / 30);
 
-                if (width <= 0) {
-                    console.warn(`${isWorkpiece ? '工件' : '工作'} ${id} 的工作方塊寬度無效：${width}`);
-                    return;
-                }
+                    if (width <= 0) {
+                        console.warn(`${isWorkpiece ? '工件' : '工作'} ${id} 的工作方塊寬度無效：${width}`);
+                        return;
+                    }
 
-                console.log(`渲染${isWorkpiece ? '工件' : '工作'} ${id} 在站點 ${station.name}：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, left=${left}, width=${width}`);
+                    console.log(`渲染${isWorkpiece ? '工件' : '工作'} ${id} 在站點 ${station.name}：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, left=${left}, width=${width}`);
 
-                const taskDiv = document.createElement('div');
-                taskDiv.className = 'task';
-                taskDiv.style.left = `${left}px`;
-                taskDiv.style.width = `${width}px`;
-                taskDiv.style.zIndex = zIndexCounter; // 設置 z-index，較新創建的方塊有更高的值
-                zIndexCounter--; // 遞減 z-index
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = 'task';
+                    taskDiv.style.left = `${left}px`;
+                    taskDiv.style.width = `${width}px`;
+                    taskDiv.style.zIndex = zIndexCounter;
+                    zIndexCounter--;
 
-                let taskColor;
-                if (isWorkpiece) {
-                    if (data.isUrgent) {
-                    taskColor = '#ff0000'; // 急件顯示紅色
-                    console.log(`工件 ${id} 為急件，背景顏色設為紅色：${taskColor}`);
+                    let taskColor;
+                    if (isWorkpiece) {
+                        if (data.isUrgent) {
+                            taskColor = '#ff0000'; // 急件顯示紅色
+                            console.log(`工件 ${id} 為急件，背景顏色設為紅色：${taskColor}`);
+                        } else if (data.status === '已完成') {
+                            taskColor = '#D3D3D3'; // 已完成顯示淺灰色（原為 #00FF00 亮綠色）
+                            console.log(`工件 ${id} 已完成，背景顏色設為淺灰色：${taskColor}`);
+                        } else {
+                            taskColor = getWorkpieceColor(id);
+                            console.log(`工件 ${id} 非急件，使用生成顏色：${taskColor}`);
+                        }
                     } else {
-                    taskColor = getWorkpieceColor(id);
-                    console.log(`工件 ${id} 非急件，使用生成顏色：${taskColor}`);
-                    }
-                } else {
-                    taskColor = getTaskColor(id);
-                    console.log(`工作 ${id} 使用生成顏色：${taskColor}`);
-                }
-                taskDiv.style.backgroundColor = taskColor;
-
-                if (isWorkpiece) {
-                    taskDiv.dataset.workpieceId = id;
-                    taskDiv.dataset.pathIndex = pathIndex;
-                } else {
-                    taskDiv.dataset.taskId = id;
-                }
-                taskDiv.dataset.stationIndex = stationIndex;
-
-                const label = document.createElement('span');
-                label.textContent = isWorkpiece ? (data.product || '未指定') : (data.taskType || '未指定');
-                taskDiv.appendChild(label);
-
-                const startTimeFormatted = new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
-                const endTimeFormatted = new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
-                const tooltipText = isWorkpiece
-                    ? `時間: (${startTimeFormatted} - ${endTimeFormatted})\n客戶: ${data.customer || '未指定'}\n產品: ${data.product || '未指定'}\n容量: ${data.capacity || '未指定'}\n急件: ${data.isUrgent ? '是' : '否'}`
-                    : `時間: (${startTimeFormatted} - ${endTimeFormatted})\n作業種類: ${data.taskType || '未指定'}`;
-
-                let tooltip = null;
-
-                taskDiv.addEventListener('mouseover', (e) => {
-                    if (tooltip) return;
-                    tooltip = document.createElement('div');
-                    tooltip.className = 'custom-tooltip';
-                    tooltip.textContent = tooltipText;
-                    document.body.appendChild(tooltip);
-
-                    const rect = taskDiv.getBoundingClientRect();
-                    tooltip.style.left = `${e.pageX + 10}px`;
-                    tooltip.style.top = `${e.pageY + 10}px`;
-                });
-
-                taskDiv.addEventListener('mousemove', (e) => {
-                    if (tooltip) {
-                    tooltip.style.left = `${e.pageX + 10}px`;
-                    tooltip.style.top = `${e.pageY + 10}px`;
-                    }
-                });
-
-                taskDiv.addEventListener('mouseout', () => {
-                    if (tooltip) {
-                    tooltip.remove();
-                    tooltip = null;
-                    }
-                });
-
-                // 雙擊事件以顯示時間調整窗
-                taskDiv.addEventListener('dblclick', (e) => {
-                    if (tooltip) {
-                    tooltip.remove();
-                    tooltip = null;
+                        taskColor = getTaskColor(id);
+                        console.log(`工作 ${id} 使用生成顏色：${taskColor}`);
                     }
 
-                    const existingModal = document.querySelector('.datetime-modal');
-                    if (existingModal) {
-                    existingModal.remove();
+                    if (!taskColor || taskColor === 'black' || taskColor === '#000000') {
+                        taskColor = '#999';
+                        console.warn(`工作方塊 ${id} 的顏色無效，使用默認顏色：${taskColor}`);
                     }
+                    taskDiv.style.backgroundColor = taskColor;
 
-                    const modal = document.createElement('div');
-                    modal.className = 'datetime-modal';
-                    // 居中顯示模態框
-                    modal.style.left = '50%';
-                    modal.style.top = '50%';
-                    modal.style.transform = 'translate(-50%, -50%)';
+                    if (isWorkpiece) {
+                        taskDiv.dataset.workpieceId = id;
+                        taskDiv.dataset.pathIndex = pathIndex;
+                    } else {
+                        taskDiv.dataset.taskId = id;
+                    }
+                    taskDiv.dataset.stationIndex = stationIndex;
 
-                    const currentStartTime = new Date(startTime).toISOString().slice(0, 16);
-                    const currentEndTime = new Date(endTime).toISOString().slice(0, 16);
-                    console.log(`雙擊方塊 ${isWorkpiece ? '工件' : '工作'} ${id}，原始開始時間: ${startTimeFormatted}，原始結束時間: ${endTimeFormatted}`);
-                    console.log(`模態框預設開始時間: ${currentStartTime}，預設結束時間: ${currentEndTime}`);
+                    const label = document.createElement('span');
+                    label.textContent = isWorkpiece ? (data.product || '未指定') : (data.taskType || '未指定');
+                    taskDiv.appendChild(label);
 
-                    modal.innerHTML = `
-                    <div class="modal-header">${isWorkpiece ? `編號 ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間` : `工作 ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`}</div>
-                    <label>當前開始時間: ${startTimeFormatted}</label>
-                    <input type="datetime-local" id="newStartTimeInput" value="${currentStartTime}">
-                    <label>當前結束時間: ${endTimeFormatted}</label>
-                    <input type="datetime-local" id="newEndTimeInput" value="${currentEndTime}">
-                    <div class="buttons">
-                        <button class="confirm-btn">確認</button>
-                        <button class="cancel-btn">取消</button>
-                    </div>
-                    `;
+                    const startTimeFormatted = new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+                    const endTimeFormatted = new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+                    const tooltipText = isWorkpiece
+                        ? `時間: (${startTimeFormatted} - ${endTimeFormatted})\n客戶: ${data.customer || '未指定'}\n產品: ${data.product || '未指定'}\n容量: ${data.capacity || '未指定'}\n急件: ${data.isUrgent ? '是' : '否'}`
+                        : `時間: (${startTimeFormatted} - ${endTimeFormatted})\n作業種類: ${data.taskType || '未指定'}`;
 
-                    document.body.appendChild(modal);
+                    let tooltip = null;
 
-                    // 添加拖曳功能
-                    let isDragging = false;
-                    let currentX;
-                    let currentY;
-                    let initialX;
-                    let initialY;
+                    taskDiv.addEventListener('mouseover', (e) => {
+                        if (tooltip) return;
+                        tooltip = document.createElement('div');
+                        tooltip.className = 'custom-tooltip';
+                        tooltip.textContent = tooltipText;
+                        document.body.appendChild(tooltip);
 
-                    const header = modal.querySelector('.modal-header');
-                    header.addEventListener('mousedown', (e) => {
-                    isDragging = true;
-                    initialX = e.clientX - currentX;
-                    initialY = e.clientY - currentY;
-
-                    document.addEventListener('mousemove', onMouseMove);
-                    document.addEventListener('mouseup', onMouseUp);
+                        const rect = taskDiv.getBoundingClientRect();
+                        tooltip.style.left = `${e.pageX + 10}px`;
+                        tooltip.style.top = `${e.pageY + 10}px`;
                     });
 
-                    function onMouseMove(e) {
-                    if (isDragging) {
-                        e.preventDefault();
-                        currentX = e.clientX - initialX;
-                        currentY = e.clientY - initialY;
+                    taskDiv.addEventListener('mousemove', (e) => {
+                        if (tooltip) {
+                            tooltip.style.left = `${e.pageX + 10}px`;
+                            tooltip.style.top = `${e.pageY + 10}px`;
+                        }
+                    });
 
-                        modal.style.left = `${currentX + (modal.offsetWidth / 2)}px`;
-                        modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
-                        modal.style.transform = 'none'; // 移除居中效果
-                    }
-                    }
+                    taskDiv.addEventListener('mouseout', () => {
+                        if (tooltip) {
+                            tooltip.remove();
+                            tooltip = null;
+                        }
+                    });
 
-                    function onMouseUp() {
-                    isDragging = false;
-                    document.removeEventListener('mousemove', onMouseMove);
-                    document.removeEventListener('mouseup', onMouseUp);
-                    }
-
-                    // 設置初始位置
-                    currentX = window.innerWidth / 2 - (modal.offsetWidth / 2);
-                    currentY = window.innerHeight / 2 - (modal.offsetHeight / 2);
-                    modal.style.left = `${currentX + (modal.offsetWidth / 2)}px`;
-                    modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
-                    modal.style.transform = 'none';
-
-                    modal.querySelector('.confirm-btn').addEventListener('click', () => {
-                    const newStartTimeInput = modal.querySelector('#newStartTimeInput').value;
-                    const newEndTimeInput = modal.querySelector('#newEndTimeInput').value;
-                    const newStartDate = new Date(newStartTimeInput);
-                    const newEndDate = new Date(newEndTimeInput);
-
-                    if (!isNaN(newStartDate.getTime()) && !isNaN(newEndDate.getTime())) {
-                        const newStartTimeMs = newStartDate.getTime();
-                        const newEndTimeMs = newEndDate.getTime();
-
-                        if (newEndTimeMs <= newStartTimeMs) {
-                        alert('結束時間必須晚於開始時間！');
-                        return;
+                    taskDiv.addEventListener('dblclick', (e) => {
+                        if (tooltip) {
+                            tooltip.remove();
+                            tooltip = null;
                         }
 
-                        let hasConflict = false;
-
-                        Object.keys(workpieces).forEach(otherWpId => {
-                        if (isWorkpiece && otherWpId === id) return;
-                        const otherWp = workpieces[otherWpId];
-                        if (otherWp.status === '已抽單' || otherWp.status === '已完成') return;
-
-                        const otherPathIndex = otherWp.path.indexOf(stationIndex);
-                        if (otherPathIndex === -1) return;
-
-                        const otherStartTime = otherWp.stationTimes[otherPathIndex].startTime;
-                        const otherEndTime = otherWp.stationTimes[otherPathIndex].endTime;
-
-                        if (newStartTimeMs < otherEndTime && newEndTimeMs > otherStartTime) {
-                            hasConflict = true;
+                        const existingModal = document.querySelector('.datetime-modal');
+                        if (existingModal) {
+                            existingModal.remove();
                         }
+
+                        const modal = document.createElement('div');
+                        modal.className = 'datetime-modal';
+                        modal.style.left = '50%';
+                        modal.style.top = '50%';
+                        modal.style.transform = 'translate(-50%, -50%)';
+
+                        const currentStartTime = new Date(startTime).toISOString().slice(0, 16);
+                        const currentEndTime = new Date(endTime).toISOString().slice(0, 16);
+                        console.log(`雙擊方塊 ${isWorkpiece ? '工件' : '工作'} ${id}，原始開始時間: ${startTimeFormatted}，原始結束時間: ${endTimeFormatted}`);
+                        console.log(`模態框預設開始時間: ${currentStartTime}，預設結束時間: ${currentEndTime}`);
+
+                        modal.innerHTML = `
+                            <div class="modal-header">${isWorkpiece ? `編號 ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間` : `工作 ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`}</div>
+                            <label>當前開始時間: ${startTimeFormatted}</label>
+                            <input type="datetime-local" id="newStartTimeInput" value="${currentStartTime}">
+                            <label>當前結束時間: ${endTimeFormatted}</label>
+                            <input type="datetime-local" id="newEndTimeInput" value="${currentEndTime}">
+                            <div class="buttons">
+                                <button class="confirm-btn">確認</button>
+                                <button class="cancel-btn">取消</button>
+                            </div>
+                        `;
+
+                        document.body.appendChild(modal);
+
+                        let isDragging = false;
+                        let currentX;
+                        let currentY;
+                        let initialX;
+                        let initialY;
+
+                        const header = modal.querySelector('.modal-header');
+                        header.addEventListener('mousedown', (e) => {
+                            isDragging = true;
+                            initialX = e.clientX - currentX;
+                            initialY = e.clientY - currentY;
+
+                            document.addEventListener('mousemove', onMouseMove);
+                            document.addEventListener('mouseup', onMouseUp);
                         });
 
-                        Object.keys(tasks).forEach(otherTaskId => {
-                        if (!isWorkpiece && otherTaskId === id) return;
-                        const otherTask = tasks[otherTaskId];
-                        if (otherTask.status === '已抽單') return;
+                        function onMouseMove(e) {
+                            if (isDragging) {
+                                e.preventDefault();
+                                currentX = e.clientX - initialX;
+                                currentY = e.clientY - initialY;
 
-                        if (otherTask.stationIndex !== stationIndex) return;
-
-                        const otherStartTime = otherTask.startTime;
-                        const otherEndTime = otherTask.endTime;
-
-                        if (newStartTimeMs < otherEndTime && newEndTimeMs > otherStartTime) {
-                            hasConflict = true;
-                        }
-                        });
-
-                        if (hasConflict) {
-                        alert('作業未完成：該站點在調整後的時間已有其他作業');
-                        modal.remove();
-                        return;
-                        }
-
-                        if (isWorkpiece) {
-                        const currentStationIdxInPath = data.path.indexOf(stationIndex);
-                        if (currentStationIdxInPath > 0) {
-                            const prevStationIdx = data.path[currentStationIdxInPath - 1];
-                            const prevEndTime = data.stationTimes[currentStationIdxInPath - 1].endTime;
-                            if (newStartTimeMs < prevEndTime) {
-                            alert('作業未完成：前一站在調整後的時間尚未完成');
-                            modal.remove();
-                            return;
+                                modal.style.left = `${currentX + (modal.offsetWidth / 2)}px`;
+                                modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
+                                modal.style.transform = 'none';
                             }
                         }
 
-                        data.stationTimes[pathIndex] = {
-                            startTime: newStartTimeMs,
-                            endTime: newEndTimeMs
-                        };
-                        } else {
-                        data.startTime = newStartTimeMs;
-                        data.endTime = newEndTimeMs;
+                        function onMouseUp() {
+                            isDragging = false;
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
                         }
 
-                        addMonitorLog(`修改${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`, [{
-                        workpieceId: id,
-                        stationName: stations[stationIndex]?.name || '未知站點',
-                        lastCompletionTimeAtStation: null,
-                        startTimeForThisStation: newStartTimeMs,
-                        processingTime: (newEndTimeMs - newStartTimeMs) / (60 * 1000),
-                        completionTime: newEndTimeMs
-                        }]);
+                        currentX = window.innerWidth / 2 - (modal.offsetWidth / 2);
+                        currentY = window.innerHeight / 2 - (modal.offsetHeight / 2);
+                        modal.style.left = `${currentX + (modal.offsetWidth / 2)}px`;
+                        modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
+                        modal.style.transform = 'none';
 
-                        // 更新 localStorage
-                        localStorage.setItem('workpieces', JSON.stringify(workpieces));
-                        localStorage.setItem('tasks', JSON.stringify(tasks));
+                        modal.querySelector('.confirm-btn').addEventListener('click', () => {
+                            const newStartTimeInput = modal.querySelector('#newStartTimeInput').value;
+                            const newEndTimeInput = modal.querySelector('#newEndTimeInput').value;
+                            const newStartDate = new Date(newStartTimeInput);
+                            const newEndDate = new Date(newEndTimeInput);
 
-                        renderStations();
-                        renderWorkpieces();
-                        renderTasks();
-                        renderTimelineCharts();
-                        addLog(`${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間已更新為 ${newStartTimeInput} 至 ${newEndTimeInput}`);
-                    } else {
-                        alert('輸入的時間格式無效，請使用 YYYY-MM-DDThh:mm 格式！');
-                    }
-                    modal.remove();
+                            if (!isNaN(newStartDate.getTime()) && !isNaN(newEndDate.getTime())) {
+                                const newStartTimeMs = newStartDate.getTime();
+                                const newEndTimeMs = newEndDate.getTime();
+
+                                if (newEndTimeMs <= newStartTimeMs) {
+                                    alert('結束時間必須晚於開始時間！');
+                                    return;
+                                }
+
+                                let hasConflict = false;
+
+                                Object.keys(workpieces).forEach(otherWpId => {
+                                    if (isWorkpiece && otherWpId === id) return;
+                                    const otherWp = workpieces[otherWpId];
+                                    if (otherWp.status === '已抽單' || otherWp.status === '已完成') return;
+
+                                    const otherPathIndex = otherWp.path.indexOf(stationIndex);
+                                    if (otherPathIndex === -1) return;
+
+                                    const otherStartTime = otherWp.stationTimes[otherPathIndex].startTime;
+                                    const otherEndTime = otherWp.stationTimes[otherPathIndex].endTime;
+
+                                    if (newStartTimeMs < otherEndTime && newEndTimeMs > otherStartTime) {
+                                        hasConflict = true;
+                                    }
+                                });
+
+                                Object.keys(tasks).forEach(otherTaskId => {
+                                    if (!isWorkpiece && otherTaskId === id) return;
+                                    const otherTask = tasks[otherTaskId];
+                                    if (otherTask.status === '已抽單') return;
+
+                                    if (otherTask.stationIndex !== stationIndex) return;
+
+                                    const otherStartTime = otherTask.startTime;
+                                    const otherEndTime = otherTask.endTime;
+
+                                    if (newStartTimeMs < otherEndTime && newEndTimeMs > otherStartTime) {
+                                        hasConflict = true;
+                                    }
+                                });
+
+                                if (hasConflict) {
+                                    alert('作業未完成：該站點在調整後的時間已有其他作業');
+                                    modal.remove();
+                                    return;
+                                }
+
+                                if (isWorkpiece) {
+                                    const currentStationIdxInPath = data.path.indexOf(stationIndex);
+                                    if (currentStationIdxInPath > 0) {
+                                        const prevStationIdx = data.path[currentStationIdxInPath - 1];
+                                        const prevEndTime = data.stationTimes[currentStationIdxInPath - 1].endTime;
+                                        if (newStartTimeMs < prevEndTime) {
+                                            alert('作業未完成：前一站在調整後的時間尚未完成');
+                                            modal.remove();
+                                            return;
+                                        }
+                                    }
+
+                                    data.stationTimes[pathIndex] = {
+                                        startTime: newStartTimeMs,
+                                        endTime: newEndTimeMs
+                                    };
+                                } else {
+                                    data.startTime = newStartTimeMs;
+                                    data.endTime = newEndTimeMs;
+                                }
+
+                                addMonitorLog(`修改${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`, [{
+                                    workpieceId: id,
+                                    stationName: stations[stationIndex]?.name || '未知站點',
+                                    lastCompletionTimeAtStation: null,
+                                    startTimeForThisStation: newStartTimeMs,
+                                    processingTime: (newEndTimeMs - newStartTimeMs) / (60 * 1000),
+                                    completionTime: newEndTimeMs
+                                }]);
+
+                                localStorage.setItem('workpieces', JSON.stringify(workpieces));
+                                localStorage.setItem('tasks', JSON.stringify(tasks));
+
+                                renderStations();
+                                renderWorkpieces();
+                                renderTasks();
+                                renderTimelineCharts();
+                                addLog(`${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間已更新為 ${newStartTimeInput} 至 ${newEndTimeInput}`);
+                            } else {
+                                alert('輸入的時間格式無效，請使用 YYYY-MM-DDThh:mm 格式！');
+                            }
+                            modal.remove();
+                        });
+
+                        modal.querySelector('.cancel-btn').addEventListener('click', () => {
+                            modal.remove();
+                        });
                     });
 
-                    modal.querySelector('.cancel-btn').addEventListener('click', () => {
-                    modal.remove();
-                    });
-                });
-
-                timelineTasks.appendChild(taskDiv);
+                    timelineTasks.appendChild(taskDiv);
                 });
 
                 stationRow.appendChild(timelineTasks);
@@ -2532,6 +2549,12 @@
             timelineWrapper.appendChild(stationLabels);
             timelineWrapper.appendChild(timeline);
             timelineCharts.appendChild(timelineWrapper);
+
+            const newTimelineElement = document.querySelector('.timeline');
+            if (newTimelineElement) {
+                newTimelineElement.scrollLeft = scrollPosition;
+                console.log(`恢復滾動位置：${scrollPosition}`);
+            }
 
             timelineCharts.offsetHeight;
             console.log('時間軸渲染完成');
