@@ -191,6 +191,22 @@
             background-color: #ef4444;
             color: white;
         }
+        .workpiece-table-container {
+        overflow-x: auto;
+        background-color: #fff;
+        border-radius: 0.5rem;
+        }
+        .workpiece-table {
+            min-width: 1200px; /* 設置表格最小寬度，確保需要滾動 */
+        }
+        .task-table-container {
+            overflow-x: auto;
+            background-color: #fff;
+            border-radius: 0.5rem;
+        }
+        .task-table {
+            min-width: 800px; /* 設置表格最小寬度，確保需要滾動 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -214,37 +230,42 @@
             </div>
             <div id="workpieces" class="bg-white p-4 rounded shadow mb-6">
                 <h2 class="text-xl font-semibold mb-2">生產清單</h2>
-                <table class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="border p-2">編號</th>
-                            <th class="border p-2">客戶</th>
-                            <th class="border p-2">容量</th>
-                            <th class="border p-2">產品</th>
-                            <th class="border p-2">急件</th>
-                            <th class="border p-2">狀態</th>
-                            <th class="border p-2">站點路徑</th>
-                            <th class="border p-2">開始時間</th>
-                            <th class="border p-2">預計完成時間</th>
-                        </tr>
-                    </thead>
-                    <tbody id="workpieceList"></tbody>
-                </table>
+                <div class="workpiece-table-container">
+                    <table class="workpiece-table w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border p-2 w-16">編號</th>
+                                <th class="border p-2 w-24">客戶</th>
+                                <th class="border p-2 w-24">容量</th>
+                                <th class="border p-2 w-24">產品</th>
+                                <th class="border p-2 w-16">急件</th>
+                                <th class="border p-2 w-24">狀態</th>
+                                <th class="border p-2 w-32">站點路徑</th>
+                                <th class="border p-2 w-48">開始時間</th>
+                                <th class="border p-2 w-48">預計完成時間</th>
+                                <th class="border p-2 w-48">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workpieceList"></tbody>
+                    </table>
+                </div>
             </div>
             <div id="tasks" class="bg-white p-4 rounded shadow mb-6">
                 <h2 class="text-xl font-semibold mb-2">工作狀態</h2>
-                <table class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="border p-2">編號</th>
-                            <th class="border p-2">作業種類</th>
-                            <th class="border p-2">站點</th>
-                            <th class="border p-2">開始時間</th>
-                            <th class="border p-2">結束時間</th>
-                        </tr>
-                    </thead>
-                    <tbody id="taskList"></tbody>
-                </table>
+                <div class="task-table-container">
+                    <table class="task-table w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border p-2 w-16">編號</th>
+                                <th class="border p-2 w-24">作業種類</th>
+                                <th class="border p-2 w-24">站點</th>
+                                <th class="border p-2 w-48">開始時間</th>
+                                <th class="border p-2 w-48">結束時間</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskList"></tbody>
+                    </table>
+                </div>
             </div>
             <div id="log" class="log-container">
                 <h2 class="text-xl font-semibold">系統日誌</h2>
@@ -413,44 +434,46 @@
                 <h2 class="text-xl font-semibold mb-2">作業時間軸</h2>
                 <!-- 圖表將由 JavaScript 動態生成 -->
             </div>
-            <!-- 添加工件狀態表 -->
             <div id="timelineWorkpieces" class="bg-white p-4 rounded shadow mb-6">
                 <h2 class="text-xl font-semibold mb-2">生產清單</h2>
-                <table class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="border p-2">編號</th>
-                            <th class="border p-2">客戶</th>
-                            <th class="border p-2">容量</th>
-                            <th class="border p-2">產品</th>
-                            <th class="border p-2">急件</th>
-                            <th class="border p-2">狀態</th>
-                            <th class="border p-2">站點路徑</th>
-                            <th class="border p-2">開始時間</th>
-                            <th class="border p-2">預計完成時間</th>
-                        </tr>
-                    </thead>
-                    <tbody id="timelineWorkpieceList"></tbody>
-                </table>
+                <div class="workpiece-table-container">
+                    <table class="workpiece-table w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border p-2 w-16">編號</th>
+                                <th class="border p-2 w-24">客戶</th>
+                                <th class="border p-2 w-24">容量</th>
+                                <th class="border p-2 w-24">產品</th>
+                                <th class="border p-2 w-16">急件</th>
+                                <th class="border p-2 w-24">狀態</th>
+                                <th class="border p-2 w-32">站點路徑</th>
+                                <th class="border p-2 w-48">開始時間</th>
+                                <th class="border p-2 w-48">預計完成時間</th>
+                                <th class="border p-2 w-48">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timelineWorkpieceList"></tbody>
+                    </table>
+                </div>
             </div>
-            <!-- 添加工作狀態表 -->
             <div id="timelineTasks" class="bg-white p-4 rounded shadow mb-6">
                 <h2 class="text-xl font-semibold mb-2">工作狀態</h2>
-                <table class="w-full border-collapse">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="border p-2">編號</th>
-                            <th class="border p-2">作業種類</th>
-                            <th class="border p-2">站點</th>
-                            <th class="border p-2">開始時間</th>
-                            <th class="border p-2">結束時間</th>
-                        </tr>
-                    </thead>
-                    <tbody id="timelineTaskList"></tbody>
-                </table>
+                <div class="task-table-container">
+                    <table class="task-table w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="border p-2 w-16">編號</th>
+                                <th class="border p-2 w-24">作業種類</th>
+                                <th class="border p-2 w-24">站點</th>
+                                <th class="border p-2 w-48">開始時間</th>
+                                <th class="border p-2 w-48">結束時間</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timelineTaskList"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
     <script>
         let stations = [];
         const defaultStations = [
@@ -875,54 +898,38 @@
 
                 let workpieceItems = '';
                 const workpiecesAtStation = Object.keys(workpieces).filter(wpId => {
-                const wp = workpieces[wpId];
-                if (!wp) {
-                    console.warn(`工件 ${wpId} 不存在於 workpieces 中`);
-                    return false;
-                }
-                // 只顯示「進行中」的工件，並確保路徑包含當前站點
-                const isInProgress = wp.status === '進行中';
-                const isInPath = wp.path.includes(index);
-                console.log(`工件 ${wpId} 狀態：${wp.status}, 是否在路徑中：${isInPath}, 是否顯示：${isInProgress && isInPath}`);
-                return isInPath && isInProgress;
+                    const wp = workpieces[wpId];
+                    if (!wp) {
+                        console.warn(`工件 ${wpId} 不存在於 workpieces 中`);
+                        return false;
+                    }
+                    // 只顯示「進行中」的工件，並確保路徑包含當前站點
+                    const isInProgress = wp.status === '進行中';
+                    const isInPath = wp.path.includes(index);
+                    console.log(`工件 ${wpId} 狀態：${wp.status}, 是否在路徑中：${isInPath}, 是否顯示：${isInProgress && isInPath}`);
+                    return isInPath && isInProgress;
                 });
 
                 console.log(`站點 ${station.name} 顯示的工件數量：${workpiecesAtStation.length}, 工件ID：${workpiecesAtStation.join(', ')}`);
 
                 workpiecesAtStation.forEach(wpId => {
-                const wp = workpieces[wpId];
-                const pathIndex = wp.path.indexOf(index);
-                const startTime = wp.stationTimes[pathIndex].startTime;
-                workpieceItems += `
-                    <div class="workpiece-item flex items-center justify-center mt-2 p-2 border rounded">
-                    <span class="mr-2">${wpId}</span>
-                    <span class="mr-2">開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算'}</span>
-                    <button class="remove-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mr-2" data-wp="${wpId}" data-from="${index}">抽單</button>
-                    <button class="complete-btn bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" data-wp="${wpId}" data-from="${index}">完成</button>
-                    </div>
-                `;
+                    const wp = workpieces[wpId];
+                    const pathIndex = wp.path.indexOf(index);
+                    const startTime = wp.stationTimes[pathIndex].startTime;
+                    workpieceItems += `
+                        <div class="workpiece-item flex items-center justify-center mt-2 p-2 border rounded">
+                            <span class="mr-2">${wpId}</span>
+                            <span class="mr-2">開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算'}</span>
+                        </div>
+                    `;
                 });
 
                 stationDiv.innerHTML = `
-                <h2 class="text-xl font-semibold">${station.name}</h2>
-                <p class="mt-2">工件列表:</p>
-                <div class="workpiece-container">${workpieceItems || '無工件'}</div>
+                    <h2 class="text-xl font-semibold">${station.name}</h2>
+                    <p class="mt-2">工件列表:</p>
+                    <div class="workpiece-container">${workpieceItems || '無工件'}</div>
                 `;
                 stationsDiv.appendChild(stationDiv);
-            });
-
-            // 綁定「抽單」按鈕事件
-            document.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.removeEventListener('click', handleRemoveWorkpiece); // 移除舊的事件監聽器
-                btn.addEventListener('click', handleRemoveWorkpiece);
-                console.log(`綁定 remove-btn 事件，工件ID：${btn.dataset.wp}`);
-            });
-
-            // 綁定「完成」按鈕事件
-            document.querySelectorAll('.complete-btn').forEach(btn => {
-                btn.removeEventListener('click', handleCompleteWorkpiece); // 移除舊的事件監聽器
-                btn.addEventListener('click', handleCompleteWorkpiece);
-                console.log(`綁定 complete-btn 事件，工件ID：${btn.dataset.wp}`);
             });
 
             console.log(`完成 renderStations 執行`);
@@ -1521,58 +1528,49 @@
             return workpiece.processingTimes[stationIndex];
         }
 
-        function renderStations() {
-            console.log(`開始執行 renderStations`);
-            const stationsDiv = document.getElementById('stations');
-            if (!stationsDiv) {
-                console.error('無法找到 stations 元素');
-                return;
-            }
 
-            stationsDiv.innerHTML = ''; // 清空現有內容
-            console.log(`已清空 stationsDiv 內容`);
 
-            stations.forEach((station, index) => {
-                const stationDiv = document.createElement('div');
-                stationDiv.className = 'bg-white p-4 rounded shadow text-center';
-                stationDiv.dataset.stationIndex = index;
+        function renderWorkpieces() {
+            const workpieceList = document.getElementById('workpieceList');
+            const timelineWorkpieceList = document.getElementById('timelineWorkpieceList');
 
-                let workpieceItems = '';
-                const workpiecesAtStation = Object.keys(workpieces).filter(wpId => {
-                    const wp = workpieces[wpId];
-                    if (!wp) {
-                        console.warn(`工件 ${wpId} 不存在於 workpieces 中`);
-                        return false;
-                    }
-                    // 只顯示「進行中」的工件，並確保路徑包含當前站點
-                    const isInProgress = wp.status === '進行中'; // 修正過濾條件，與中文狀態值一致
-                    const isInPath = wp.path.includes(index);
-                    console.log(`工件 ${wpId} 狀態：${wp.status}, 是否在路徑中：${isInPath}, 是否顯示：${isInProgress && isInPath}`);
-                    return isInPath && isInProgress;
-                });
+            // 清空 tbody 內容，但不影響 thead
+            workpieceList.innerHTML = '';
+            timelineWorkpieceList.innerHTML = '';
 
-                console.log(`站點 ${station.name} 顯示的工件數量：${workpiecesAtStation.length}, 工件ID：${workpiecesAtStation.join(', ')}`);
+            Object.keys(workpieces).forEach(wpId => {
+                const wp = workpieces[wpId];
+                const tr = document.createElement('tr');
+                const startTimes = wp.stationTimes.map(time => time.startTime ? new Date(time.startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
+                const endTimes = wp.stationTimes.map(time => time.endTime ? new Date(time.endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
 
-                workpiecesAtStation.forEach(wpId => {
-                    const wp = workpieces[wpId];
-                    const pathIndex = wp.path.indexOf(index);
-                    const startTime = wp.stationTimes[pathIndex].startTime;
-                    workpieceItems += `
-                        <div class="workpiece-item flex items-center justify-center mt-2 p-2 border rounded">
-                            <span class="mr-2">${wpId}</span>
-                            <span class="mr-2">開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算'}</span>
-                            <button class="remove-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mr-2" data-wp="${wpId}" data-from="${index}">抽單</button>
-                            <button class="complete-btn bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" data-wp="${wpId}" data-from="${index}">完成</button>
-                        </div>
+                // 根據工件狀態決定操作按鈕的顯示
+                let actionButtons = '';
+                if (wp.status === '進行中') {
+                    const stationIndex = wp.path[0]; // 使用初始站點
+                    actionButtons = `
+                        <button class="remove-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mr-2" data-wp="${wpId}" data-from="${stationIndex}">抽單</button>
+                        <button class="complete-btn bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" data-wp="${wpId}" data-from="${stationIndex}">完成</button>
                     `;
-                });
+                } else {
+                    actionButtons = `<span class="text-gray-500">無操作</span>`;
+                }
 
-                stationDiv.innerHTML = `
-                    <h2 class="text-xl font-semibold">${station.name}</h2>
-                    <p class="mt-2">工件列表:</p>
-                    <div class="workpiece-container">${workpieceItems || '無工件'}</div>
+                // 確保每個欄位正確生成
+                tr.innerHTML = `
+                    <td class="border p-2 w-16">${wpId}</td>
+                    <td class="border p-2 w-24">${wp.customer || '-'}</td>
+                    <td class="border p-2 w-24">${wp.capacity || '-'}</td>
+                    <td class="border p-2 w-24">${wp.product || '-'}</td>
+                    <td class="border p-2 w-16">${wp.isUrgent ? '是' : '否'}</td>
+                    <td class="border p-2 w-24">${wp.status}</td>
+                    <td class="border p-2 w-32">${wp.path.map(idx => stations[idx]?.name || '未知站點').join(' -> ')}</td>
+                    <td class="border p-2 w-48">${startTimes}</td>
+                    <td class="border p-2 w-48">${endTimes}</td>
+                    <td class="border p-2 w-48">${actionButtons}</td>
                 `;
-                stationsDiv.appendChild(stationDiv);
+                workpieceList.appendChild(tr);
+                timelineWorkpieceList.appendChild(tr.cloneNode(true));
             });
 
             // 綁定「抽單」按鈕事件
@@ -1588,53 +1586,25 @@
                 btn.addEventListener('click', handleCompleteWorkpiece);
                 console.log(`綁定 complete-btn 事件，工件ID：${btn.dataset.wp}`);
             });
-
-            console.log(`完成 renderStations 執行`);
-        }
-
-        function renderWorkpieces() {
-            const workpieceList = document.getElementById('workpieceList');
-            const timelineWorkpieceList = document.getElementById('timelineWorkpieceList');
-            workpieceList.innerHTML = '';
-            timelineWorkpieceList.innerHTML = '';
-
-            Object.keys(workpieces).forEach(wpId => {
-                const wp = workpieces[wpId];
-                const tr = document.createElement('tr');
-                const startTimes = wp.stationTimes.map(time => time.startTime ? new Date(time.startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
-                const endTimes = wp.stationTimes.map(time => time.endTime ? new Date(time.endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
-                tr.innerHTML = `
-                <td class="border p-2">${wpId}</td>
-                <td class="border p-2">${wp.customer || '-'}</td>
-                <td class="border p-2">${wp.capacity || '-'}</td>
-                <td class="border p-2">${wp.product || '-'}</td>
-                <td class="border p-2">${wp.isUrgent ? '是' : '否'}</td>
-                <td class="border p-2">${wp.status}</td>
-                <td class="border p-2">${wp.path.map(idx => stations[idx]?.name || '未知站點').join(' -> ')}</td>
-                <td class="border p-2">${startTimes}</td>
-                <td class="border p-2">${endTimes}</td>
-                `;
-                workpieceList.appendChild(tr);
-                timelineWorkpieceList.appendChild(tr.cloneNode(true));
-            });
-        }
+        } 
 
         function renderTasks() {
             const taskList = document.getElementById('taskList');
             const timelineTaskList = document.getElementById('timelineTaskList');
             taskList.innerHTML = '';
             timelineTaskList.innerHTML = '';
+
             Object.keys(tasks).forEach(taskId => {
                 const task = tasks[taskId];
                 const tr = document.createElement('tr');
                 const startTime = task.startTime ? new Date(task.startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算';
                 const endTime = task.endTime ? new Date(task.endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算';
                 tr.innerHTML = `
-                    <td class="border p-2">${taskId}</td>
-                    <td class="border p-2">${task.taskType || '-'}</td>
-                    <td class="border p-2">${task.status === 'canceled' ? '已取消' : stations[task.stationIndex]?.name || '未知站點'}</td>
-                    <td class="border p-2">${startTime}</td>
-                    <td class="border p-2">${endTime}</td>
+                    <td class="border p-2 w-16">${taskId}</td>
+                    <td class="border p-2 w-24">${task.taskType || '-'}</td>
+                    <td class="border p-2 w-24">${task.status === '已抽單' ? '已取消' : stations[task.stationIndex]?.name || '未知站點'}</td>
+                    <td class="border p-2 w-48">${startTime}</td>
+                    <td class="border p-2 w-48">${endTime}</td>
                 `;
                 taskList.appendChild(tr);
                 timelineTaskList.appendChild(tr.cloneNode(true));
