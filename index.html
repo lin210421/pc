@@ -863,7 +863,7 @@
         const weeklyContent = document.getElementById('weeklyContent');
 
 
-        let timelineActive = false;//
+        let timelineActive = false;
         
 
         function switchTab(tab) {
@@ -885,13 +885,13 @@
             weeklyContent.classList.remove('active');
 
             if (tab === 'workpiece') {
-                timelineActive = false;//
+                timelineActive = false;
                 workpieceTab.classList.add('active');
                 workpieceContent.classList.add('active');
                 renderStations();
                 renderWorkpieces();
             } else if (tab === 'capacity') {
-                timelineActive = false;//
+                timelineActive = false;
                 capacityTab.classList.add('active');
                 capacityContent.classList.add('active');
                 renderTaskTypes();
@@ -900,12 +900,12 @@
                 renderProcessingTimesInputs();
                 updateStationPositionDropdown();
             } else if (tab === 'monitor') {
-                timelineActive = false;//
+                timelineActive = false;
                 monitorTab.classList.add('active');
                 monitorContent.classList.add('active');
                 renderMonitorLogs();
             } else if (tab === 'timeline') {
-                timelineActive = true;//
+                timelineActive = true;
                 timelineTab.classList.add('active');
                 timelineContent.classList.add('active');
                 populateTimelineCapacityDropdown();
