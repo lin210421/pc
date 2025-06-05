@@ -192,9 +192,9 @@
             color: white;
         }
         .workpiece-table-container {
-        overflow-x: auto;
-        background-color: #fff;
-        border-radius: 0.5rem;
+            overflow-x: auto;
+            background-color: #fff;
+            border-radius: 0.5rem;
         }
         .workpiece-table {
             min-width: 1200px; /* 設置表格最小寬度，確保需要滾動 */
@@ -207,16 +207,160 @@
         .task-table {
             min-width: 800px; /* 設置表格最小寬度，確保需要滾動 */
         }
+        .processing-times-container {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 0.5rem; /* 避免滾動條遮擋 */
+        }
+        .processing-time-item {
+            flex: 0 0 150px; /* 固定寬度為 150px */
+            min-width: 150px; /* 確保不被壓縮 */
+        }
+        .processing-time-item input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .capacity-section {
+        width: 100%;
+        overflow-x: auto; /* 確保整個方塊支援橫向滾動 */
+        }
+        .capacity-input-wrapper {
+            flex: 0 0 150px; /* 放大容量輸入格 */
+            min-width: 150px;
+        }
+        .processing-times-container {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 0.5rem; /* 避免滾動條遮擋 */
+        }
+        .processing-time-item {
+            flex: 0 0 150px; /* 固定寬度為 150px */
+            min-width: 150px; /* 確保不被壓縮 */
+        }
+        .processing-time-item input, .capacity-input-wrapper input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        /* Placeholder 樣式 */
+        .capacity-input-wrapper input::placeholder,
+        .processing-time-item input::placeholder {
+            color: #d3d3d3; /* 淺灰色 */
+        }
+        .workpiece-table, .task-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        .workpiece-table th, .workpiece-table td,
+        .task-table th, .task-table td {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+        }
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #f8fafc; 
+            padding: 1rem 1.25rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12); 
+            border-radius: 0.75rem; 
+            border: 1px solid #e2e8f0; 
+            font-size: 15px;
+            line-height: 1.7;
+            transition: box-shadow 0.2s;
+        }
+
+        .log-container:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+        }
+
+        .log-container::-webkit-scrollbar {
+            width: 7px;
+            background: #e2e8f0;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 5px;
+        }
+
+        .log-container .log-entry {
+            padding-bottom: 0.35em;
+            border-bottom: 1px dashed #e2e8f0;
+            margin-bottom: 0.2em;
+        }
+
+        .log-container .log-entry:last-child {
+            border-bottom: none;
+        }
+        #weeklyProductChart table {
+            margin-top: 16px;
+            background: #fff;
+            width: 2000px;
+            border-collapse: collapse; /* 保證邊框貼齊不重疊 */
+        }
+
+        #weeklyProductChart th,
+        #weeklyProductChart td {
+            text-align: center;
+            min-width: 160px;
+            border: 1px solid #ccc; /* 四邊都加線條 */
+        }
+
+        #weeklyProductChart tr {
+            border-bottom: 1px solid #ccc; /* 確保每一列之間有橫線 */
+        }
+
+        #weeklyProductChart td {
+            position: relative;
+            height: 96px;
+        }
+
+        #weeklyProductChart .bar {
+            position: absolute;
+            left: 10%;
+            width: 80%;
+            top: 12px;
+            height: 48px;
+            border-radius: 12px;
+            font-size: 22px;
+            background: #87ceeb;
+            color: #333;
+            border: 2px solid #6bb3e9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #weeklyProductChart {
+            overflow-x: auto;
+        }
+
+        /* 固定產品欄 */
+        #weeklyProductChart th:first-child,
+        #weeklyProductChart td:first-child {
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 2;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid #ccc;
+        }
+        #weeklyProductChart th:not(:first-child) {
+            position: static;
+        }
+
+
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto p-4">
         <h1 class="text-3xl font-bold text-center mb-6">排程模擬</h1>
         <div class="mb-4">
-            <button id="workpieceTab" class="tab-button bg-gray-200 active">工件管理</button>
+            <button id="workpieceTab" class="tab-button bg-gray-200 active">作業管理</button>
             <button id="capacityTab" class="tab-button bg-gray-200">管理</button>
             <button id="monitorTab" class="tab-button bg-gray-200">監控</button>
             <button id="timelineTab" class="tab-button bg-gray-200">作業時間軸</button>
+            <button id="weeklyTab" class="tab-button bg-gray-200">產品週排程</button>
         </div>
         <!-- 工件管理頁籤 -->
         <div id="workpieceContent" class="tab-content active">
@@ -227,6 +371,14 @@
             </div>
             <div id="stations" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <!-- 站點將由 JavaScript 動態生成 -->
+            </div>
+            <div id="workpiece-date-filter" class="mb-4 flex items-center gap-2">
+                <label>起始日期</label>
+                <input type="date" id="wpStartDate" class="border px-2 py-1 rounded">
+                <label>結束日期</label>
+                <input type="date" id="wpEndDate" class="border px-2 py-1 rounded">
+                <button id="wpDateQueryBtn" class="bg-blue-500 text-white px-3 py-1 rounded">查詢</button>
+                <button id="wpDateResetBtn" class="bg-gray-300 px-2 py-1 rounded">重置</button>
             </div>
             <div id="workpieces" class="bg-white p-4 rounded shadow mb-6">
                 <h2 class="text-xl font-semibold mb-2">生產清單</h2>
@@ -320,15 +472,17 @@
                 <div id="stationListMessage" class="mb-2 text-gray-500"></div>
                 <ul id="stationList" class="list-disc list-inside"></ul>
             </div>
-            <div class="mb-6 bg-white p-4 rounded shadow">
+            <div class="mb-6 bg-white p-4 rounded shadow capacity-section">
                 <h2 class="text-xl font-semibold mb-2">管理容量與作業時間</h2>
                 <div class="flex flex-row gap-4 mb-4">
-                    <div class="flex-1">
+                    <div class="capacity-input-wrapper">
                         <label class="block mb-2">容量：</label>
-                        <input type="text" id="capacityInput" class="border p-2 rounded w-full" placeholder="輸入容量（如 1000ml）" />
+                        <input type="text" id="capacityInput" class="border p-2 rounded w-full" placeholder="ml" />
                     </div>
-                    <div id="processingTimesContainer" class="flex-4 flex flex-row gap-4">
-                        <!-- 作業時間輸入框將由 JavaScript 動態生成 -->
+                    <div class="flex-4">
+                        <div id="processingTimesContainer" class="processing-times-container flex gap-4 overflow-x-auto">
+                            <!-- 作業時間輸入框將由 JavaScript 動態生成 -->
+                        </div>
                     </div>
                 </div>
                 <div class="text-center">
@@ -353,7 +507,7 @@
         <!-- 作業時間軸頁籤 -->
         <div id="timelineContent" class="tab-content">
             <div class="mb-6 bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-semibold mb-2">添加新工件</h2>
+                <h2 class="text-xl font-semibold mb-2">添加新產品</h2>
                 <div class="flex flex-row gap-4 mb-4">
                     <div class="w-1/4">
                         <label class="block mb-2">客戶：</label>
@@ -474,6 +628,22 @@
                 </div>
             </div>
         </div>
+        <div id="weeklyContent" class="tab-content">
+            <div class="bg-white p-4 rounded shadow mb-4">
+                <label for="weeklyDatePicker" style="font-weight: bold; display: block; margin-bottom: 6px;">選擇日期：</label>
+                <div class="flex gap-2">
+                    <button id="weeklyPrevWeekBtn" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-1 px-2 rounded">←</button>
+                    <input type="date" id="weeklyDatePicker" class="border p-2 rounded w-full" />
+                    <button id="weeklyNextWeekBtn" class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-1 px-2 rounded">→</button>
+                </div>
+            </div>
+        
+            <div class="bg-white p-4 rounded shadow">
+                <div id="weeklyProductChart"></div>
+            </div>
+        </div>
+    
+    
     <script>
         let stations = [];
         const defaultStations = [
@@ -483,227 +653,203 @@
             { name: '裝填', startTime: null },
             { name: 'RD裝填1', startTime: null }
         ];
-
-        const storedStations = localStorage.getItem('stations');
-        if (storedStations) {
-            try {
-                const parsed = JSON.parse(storedStations);
-                if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(station => station.name && (typeof station.startTime === 'number' || station.startTime === null))) {
-                    stations = parsed;
-                } else {
-                    stations = defaultStations;
-                    localStorage.setItem('stations', JSON.stringify(stations));
-                }
-            } catch (error) {
-                console.error('無法解析 localStorage 中的 stations 數據：', error);
-                stations = defaultStations;
-                localStorage.setItem('stations', JSON.stringify(stations));
-            }
-        } else {
-            stations = defaultStations;
-            localStorage.setItem('stations', JSON.stringify(stations));
-        }
-
-        let taskTypes = [];
-        const defaultTaskTypes = ['組裝', '測試', '包裝'];
-        const storedTaskTypes = localStorage.getItem('taskTypes');
-        if (storedTaskTypes) {
-            try {
-                const parsed = JSON.parse(storedTaskTypes);
-                if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(type => typeof type === 'string')) {
-                    taskTypes = parsed;
-                } else {
-                    taskTypes = defaultTaskTypes;
-                    localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
-                }
-            } catch (error) {
-                console.error('無法解析 localStorage 中的 taskTypes 數據：', error);
-                taskTypes = defaultTaskTypes;
-                localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
-            }
-        } else {
-            taskTypes = defaultTaskTypes;
-            localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
-        }
-
-        let workpieceId = 0;
-        let taskId = 0;
         let workpieces = {};
         let tasks = {};
-        let monitorLogs = [];
-        let currentProcessingTimes = Array(stations.length).fill(10);
-
-        // 從 localStorage 載入 workpieceId 和 taskId
-        const storedWorkpieceId = localStorage.getItem('workpieceId');
-        if (storedWorkpieceId) {
-            try {
-                workpieceId = parseInt(storedWorkpieceId);
-                if (isNaN(workpieceId) || workpieceId < 0) {
-                    workpieceId = 0;
-                    localStorage.setItem('workpieceId', '0');
-                }
-            } catch (error) {
-                console.error('無法解析 localStorage 中的 workpieceId：', error);
-                workpieceId = 0;
-                localStorage.setItem('workpieceId', '0');
-            }
-        } else {
-            localStorage.setItem('workpieceId', '0');
-        }
-
-        const storedTaskId = localStorage.getItem('taskId');
-        if (storedTaskId) {
-            try {
-                taskId = parseInt(storedTaskId);
-                if (isNaN(taskId) || taskId < 0) {
-                    taskId = 0;
-                    localStorage.setItem('taskId', '0');
-                }
-            } catch (error) {
-                console.error('無法解析 localStorage 中的 taskId：', error);
-                taskId = 0;
-                localStorage.setItem('taskId', '0');
-            }
-        } else {
-            localStorage.setItem('taskId', '0');
-        }
-
-        // 從 localStorage 載入 workpieces
-        const storedWorkpieces = localStorage.getItem('workpieces');
-        if (storedWorkpieces) {
-            try {
-                const parsed = JSON.parse(storedWorkpieces);
-                if (typeof parsed === 'object' && parsed !== null) {
-                    workpieces = parsed;
-                    // 驗證資料結構並修正狀態值
-                    Object.keys(workpieces).forEach(wpId => {
-                        const wp = workpieces[wpId];
-                        if (!wp.path || !Array.isArray(wp.path) ||
-                            !wp.stationTimes || !Array.isArray(wp.stationTimes) ||
-                            !wp.status || !wp.processingTimes || !Array.isArray(wp.processingTimes)) {
-                            console.warn(`工件 ${wpId} 數據結構無效，將移除`);
-                            delete workpieces[wpId];
-                        } else {
-                            // 修正舊數據中的狀態值
-                            if (wp.status === 'active') {
-                                wp.status = '進行中';
-                            } else if (wp.status === 'canceled') {
-                                wp.status = '已抽單';
-                            } else if (wp.status === 'completed') {
-                                wp.status = '已完成';
-                            }
-                            // 確保狀態值為有效的中文狀態
-                            if (!['進行中', '已完成', '已抽單'].includes(wp.status)) {
-                                console.warn(`工件 ${wpId} 狀態無效：${wp.status}，將設為「進行中」`);
-                                wp.status = '進行中';
-                            }
-                        }
-                    });
-                    // 確保 workpieceId 與現有工件一致
-                    const maxWpId = Math.max(...Object.keys(workpieces).map(id => parseInt(id)), 0);
-                    if (maxWpId > workpieceId) {
-                        workpieceId = maxWpId;
-                        localStorage.setItem('workpieceId', workpieceId.toString());
-                    }
-                    // 保存修正後的數據
-                    localStorage.setItem('workpieces', JSON.stringify(workpieces));
-                } else {
-                    workpieces = {};
-                    localStorage.setItem('workpieces', JSON.stringify(workpieces));
-                }
-            } catch (error) {
-                console.error('無法解析 localStorage 中的 workpieces 數據：', error);
-                workpieces = {};
-                localStorage.setItem('workpieces', JSON.stringify(workpieces));
-            }
-        } else {
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-        }
-
-        // 從 localStorage 載入 tasks
-        const storedTasks = localStorage.getItem('tasks');
-        if (storedTasks) {
-            try {
-                const parsed = JSON.parse(storedTasks);
-                if (typeof parsed === 'object' && parsed !== null) {
-                    tasks = parsed;
-                    // 驗證資料結構
-                    Object.keys(tasks).forEach(taskId => {
-                        const task = tasks[taskId];
-                        if (!task.taskType || !task.stationIndex || !task.startTime || !task.endTime || !task.status) {
-                            delete tasks[taskId];
-                        }
-                    });
-                    // 確保 taskId 與現有工作一致
-                    const maxTaskId = Math.max(...Object.keys(tasks).map(id => parseInt(id)), 0);
-                    if (maxTaskId > taskId) {
-                        taskId = maxTaskId;
-                        localStorage.setItem('taskId', taskId.toString());
-                    }
-                } else {
-                    tasks = {};
-                    localStorage.setItem('tasks', JSON.stringify(tasks));
-                }
-            } catch (error) {
-                console.error('無法解析 localStorage 中的 tasks 數據：', error);
-                tasks = {};
-                localStorage.setItem('tasks', JSON.stringify(tasks));
-            }
-        } else {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        }
-
+        let workpieceId = 0;
+        let taskId = 0;
+        let taskTypes = [];
         let capacities = [];
-        const storedCapacities = localStorage.getItem('capacities');
-        if (storedCapacities) {
+        let monitorLogs = [];
+        let currentProcessingTimes = [];
+        let draggingTaskObj = null;
+        let dragStartX = 0;
+        let dragOriginalLeft = 0;
+        let dragOriginalStartTime = 0;
+        let dragOriginalEndTime = 0;
+        let dragTimelineStart = 0;
+
+        // 從後端獲取初始資料
+        async function initializeData() {
             try {
-                const parsed = JSON.parse(storedCapacities);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    if (typeof parsed[0] === 'string') {
-                        capacities = parsed.map(capacity => ({
-                            capacity: capacity,
-                            processingTimes: Array(stations.length).fill(10)
-                        }));
-                        localStorage.setItem('capacities', JSON.stringify(capacities));
-                    } else if (parsed.every(item => item.capacity && Array.isArray(item.processingTimes))) {
-                        capacities = parsed.map(item => ({
-                            capacity: item.capacity,
-                            processingTimes: item.processingTimes.length === stations.length ? item.processingTimes : Array(stations.length).fill(10)
-                        }));
-                        localStorage.setItem('capacities', JSON.stringify(capacities));
-                    } else {
-                        capacities = [
-                            { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
-                            { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
-                            { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
-                        ];
-                        localStorage.setItem('capacities', JSON.stringify(capacities));
+                // 獲取站點
+                try {
+                    const stationsResponse = await fetch('http://localhost:5000/stations', { cache: 'no-store' });
+                    if (!stationsResponse.ok) {
+                        const errorData = await stationsResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `無法獲取站點資料：${stationsResponse.statusText}`);
                     }
-                } else {
-                    capacities = [
-                        { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
-                        { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
-                        { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
-                    ];
-                    localStorage.setItem('capacities', JSON.stringify(capacities));
+                    stations = await stationsResponse.json();
+                    console.log('從後端獲取的站點：', stations);
+                    if (!Array.isArray(stations) || stations.length === 0) {
+                        stations = defaultStations;
+                        const response = await fetch('http://localhost:5000/stations', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(stations)
+                        });
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.error || `無法初始化站點：${response.statusText}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('獲取站點失敗：', error);
+                    stations = defaultStations;
+                    alert(`無法載入站點資料，已使用預設值：${error.message}`);
                 }
+
+                // 初始化 currentProcessingTimes
+                currentProcessingTimes = Array(stations.length).fill(null);
+
+                // 獲取當前處理時間
+                try {
+                    const processingTimesResponse = await fetch('http://localhost:5000/current_processing_times', { cache: 'no-store' });
+                    if (!processingTimesResponse.ok) {
+                        const errorData = await processingTimesResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `無法獲取處理時間：${processingTimesResponse.statusText}`);
+                    }
+                    const fetchedProcessingTimes = await processingTimesResponse.json();
+                    console.log('從後端獲取的處理時間：', fetchedProcessingTimes);
+                    if (Array.isArray(fetchedProcessingTimes) && fetchedProcessingTimes.length === stations.length) {
+                        currentProcessingTimes = fetchedProcessingTimes;
+                    } else {
+                        currentProcessingTimes = Array(stations.length).fill(null);
+                        const response = await fetch('http://localhost:5000/current_processing_times', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(currentProcessingTimes)
+                        });
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.error || `無法初始化處理時間：${response.statusText}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('獲取處理時間失敗：', error);
+                    currentProcessingTimes = Array(stations.length).fill(null);
+                    alert(`無法載入處理時間，已使用預設值：${error.message}`);
+                }
+
+                // 獲取容量
+                try {
+                    const capacitiesResponse = await fetch('http://localhost:5000/capacities', { cache: 'no-store' });
+                    if (!capacitiesResponse.ok) {
+                        const errorData = await capacitiesResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `無法獲取容量資料：${capacitiesResponse.statusText}`);
+                    }
+                    capacities = await capacitiesResponse.json();
+                    console.log('從後端獲取的容量：', capacities);
+                    if (!Array.isArray(capacities)) {
+                        capacities = [];
+                    }
+                } catch (error) {
+                    console.error('獲取容量失敗：', error);
+                    capacities = [];
+                    alert(`無法載入容量資料：${error.message}`);
+                }
+
+                // 獲取作業種類
+                try {
+                    const taskTypesResponse = await fetch('http://localhost:5000/task_types', { cache: 'no-store' });
+                    if (!taskTypesResponse.ok) throw new Error('無法獲取作業種類');
+                    taskTypes = await taskTypesResponse.json();
+                    if (Array.isArray(taskTypes)) {
+                        taskTypes = taskTypes.map(item => typeof item === 'string' ? item : item.taskType);
+                    } else {
+                        taskTypes = [];
+                    }
+                } catch (error) {
+                    console.error('獲取作業種類失敗：', error);
+                    taskTypes = [];
+                    alert(`無法載入作業種類：${error.message}`);
+                }
+
+                // 獲取工件
+                try {
+                    const workpiecesResponse = await fetch('http://localhost:5000/workpieces', { cache: 'no-store' });
+                    if (!workpiecesResponse.ok) {
+                        const errorData = await workpiecesResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `無法獲取工件資料：${workpiecesResponse.statusText}`);
+                    }
+                    workpieces = await workpiecesResponse.json();
+                    console.log('從後端獲取的工件：', workpieces);
+                    const maxWpId = Math.max(...Object.keys(workpieces).map(id => parseInt(id)), 0);
+                    workpieceId = maxWpId;
+                } catch (error) {
+                    console.error('獲取工件失敗：', error);
+                    workpieces = {};
+                    workpieceId = 0;
+                    alert(`無法載入工件資料：${error.message}`);
+                }
+
+                // 獲取獨立工作
+                try {
+                    const tasksResponse = await fetch('http://localhost:5000/tasks', { cache: 'no-store' });
+                    if (!tasksResponse.ok) {
+                        const errorData = await tasksResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `無法獲取工作資料：${tasksResponse.statusText}`);
+                    }
+                    tasks = await tasksResponse.json();
+                    console.log('從後端獲取的獨立工作：', tasks);
+                    const maxTaskId = Math.max(...Object.keys(tasks).map(id => parseInt(id)), 0);
+                    taskId = maxTaskId;
+                } catch (error) {
+                    console.error('獲取獨立工作失敗：', error);
+                    tasks = {};
+                    taskId = 0;
+                    alert(`無法載入工作資料：${error.message}`);
+                }
+
+                // 獲取監控日誌
+                try {
+                    const monitorLogsResponse = await fetch('http://localhost:5000/monitor_logs', { cache: 'no-store' });
+                    if (!monitorLogsResponse.ok) {
+                        const errorData = await monitorLogsResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `無法獲取監控日誌：${monitorLogsResponse.statusText}`);
+                    }
+                    monitorLogs = await monitorLogsResponse.json();
+                    if (!Array.isArray(monitorLogs)) {
+                        monitorLogs = [];
+                    }
+                } catch (error) {
+                    console.error('獲取監控日誌失敗：', error);
+                    monitorLogs = [];
+                    alert(`無法載入監控日誌：${error.message}`);
+                }
+
+                // 初始渲染
+                renderStations();
+                renderWorkpieces();
+                renderTasks();
+                renderTimelineCharts();
+                renderTimelineStationCheckboxes();
+                renderStationsList();
+                renderProcessingTimesInputs();
+                populateTimelineCapacityDropdown();
+                populateTimelineTaskTypeDropdown();
+                populateTimelineTaskStationDropdown();
+                renderMonitorLogs();
+                renderTaskTypesList();
+                renderCapacities();
+                renderWeeklyProductChart();
+
             } catch (error) {
-                console.error('無法解析 localStorage 中的 capacities 數據：', error);
-                capacities = [
-                    { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
-                    { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
-                    { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
-                ];
-                localStorage.setItem('capacities', JSON.stringify(capacities));
+                console.error('初始化資料失敗：', error);
+                alert(`無法初始化資料：${error.message}`);
+                stations = defaultStations;
+                workpieces = {};
+                tasks = {};
+                workpieceId = 0;
+                taskId = 0;
+                taskTypes = [];
+                capacities = [];
+                monitorLogs = [];
+                currentProcessingTimes = Array(stations.length).fill(null);
             }
-        } else {
-            capacities = [
-                { capacity: "500ml", processingTimes: Array(stations.length).fill(10) },
-                { capacity: "1000ml", processingTimes: Array(stations.length).fill(20) },
-                { capacity: "1500ml", processingTimes: Array(stations.length).fill(30) }
-            ];
-            localStorage.setItem('capacities', JSON.stringify(capacities));
-        }
+        }  
+
+        // 頁面載入時初始化
+        initializeData();
 
         const workpieceTab = document.getElementById('workpieceTab');
         const capacityTab = document.getElementById('capacityTab');
@@ -713,6 +859,12 @@
         const capacityContent = document.getElementById('capacityContent');
         const monitorContent = document.getElementById('monitorContent');
         const timelineContent = document.getElementById('timelineContent');
+        const weeklyTab = document.getElementById('weeklyTab');
+        const weeklyContent = document.getElementById('weeklyContent');
+
+
+        let timelineActive = false;//
+        
 
         function switchTab(tab) {
             console.log(`切換到頁籤：${tab}`);
@@ -720,18 +872,26 @@
             capacityTab.classList.remove('active');
             monitorTab.classList.remove('active');
             timelineTab.classList.remove('active');
+            weeklyTab.classList.remove('active');
+
+            document.querySelectorAll('.tab-content').forEach(div => {
+                div.classList.remove('active');
+                div.style.display = ''; // ✅ 清除殘留 display: none
+            });
             workpieceContent.classList.remove('active');
             capacityContent.classList.remove('active');
             monitorContent.classList.remove('active');
             timelineContent.classList.remove('active');
+            weeklyContent.classList.remove('active');
 
             if (tab === 'workpiece') {
+                timelineActive = false;//
                 workpieceTab.classList.add('active');
                 workpieceContent.classList.add('active');
-                renderStationCheckboxes();
                 renderStations();
                 renderWorkpieces();
             } else if (tab === 'capacity') {
+                timelineActive = false;//
                 capacityTab.classList.add('active');
                 capacityContent.classList.add('active');
                 renderTaskTypes();
@@ -740,16 +900,19 @@
                 renderProcessingTimesInputs();
                 updateStationPositionDropdown();
             } else if (tab === 'monitor') {
+                timelineActive = false;//
                 monitorTab.classList.add('active');
                 monitorContent.classList.add('active');
                 renderMonitorLogs();
             } else if (tab === 'timeline') {
+                timelineActive = true;//
                 timelineTab.classList.add('active');
                 timelineContent.classList.add('active');
                 populateTimelineCapacityDropdown();
                 populateTimelineTaskTypeDropdown();
                 populateTimelineTaskStationDropdown();
                 renderTimelineStationCheckboxes();
+                
 
                 // 設置當天日期
                 const dateFilter = document.getElementById('dateFilter');
@@ -777,7 +940,7 @@
                         requestAnimationFrame(ensureLayoutAndRender);
                     }
                 };
-                requestAnimationFrame(ensureLayoutAndRender);
+                
 
                 renderWorkpieces();
                 renderTasks();
@@ -786,6 +949,16 @@
                 document.getElementById('timelineTaskStartTimeInput').value = '';
                 document.getElementById('timelineTaskEndTimeInput').value = '';
                 console.log('切換到時間軸頁籤，設置時間選擇器為空白');
+            }else if (tab === 'weekly') {
+                timelineActive = false;
+                // 週產品圖表頁
+                weeklyTab.classList.add('active');
+                weeklyContent.classList.add('active');
+                const weeklyDatePicker = document.getElementById('weeklyDatePicker');
+                if (!weeklyDatePicker.value) {
+                    weeklyDatePicker.value = new Date().toISOString().split('T')[0];
+                }
+                renderWeeklyProductChart();
             }
         }
 
@@ -793,11 +966,14 @@
         capacityTab.addEventListener('click', () => switchTab('capacity'));
         monitorTab.addEventListener('click', () => switchTab('monitor'));
         timelineTab.addEventListener('click', () => switchTab('timeline'));
+        weeklyTab.addEventListener('click', () => switchTab('weekly'));
 
         function renderTaskTypes() {
             const taskTypeList = document.getElementById('taskTypeList');
             const taskTypeListMessage = document.getElementById('taskTypeListMessage');
+            const timelineTaskTypeSelect = document.getElementById('timelineTaskTypeSelect');
             taskTypeList.innerHTML = '';
+            timelineTaskTypeSelect.innerHTML = '<option value="">請選擇作業種類</option>';
 
             if (taskTypes.length === 0) {
                 taskTypeListMessage.textContent = '尚未添加作業種類，請在上面輸入並添加。';
@@ -811,39 +987,76 @@
                         <button class="delete-task-type-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-index="${index}">刪除</button>
                     `;
                     taskTypeList.appendChild(li);
+
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    timelineTaskTypeSelect.appendChild(option);
+                });
+
+                // 綁定刪除事件
+                document.querySelectorAll('.delete-task-type-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const index = parseInt(btn.dataset.index);
+                        const removed = taskTypes.splice(index, 1)[0];
+
+                        try {
+                            const response = await fetch('http://localhost:5000/task_types', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(taskTypes.map((type, idx) => ({ id: idx + 1, taskType: type })))
+                            });
+
+                            if (!response.ok) throw new Error('刪除失敗');
+                            const result = await response.json();
+
+                            taskTypes = result.task_types.map(t => t.taskType); // 後端回傳物件陣列，轉回字串陣列
+                            renderTaskTypes();
+                            addLog(`已刪除作業種類 ${removed}`);
+                        } catch (error) {
+                            console.error('刪除失敗：', error);
+                            alert(`刪除失敗：${error.message}`);
+                        }
+                    });
                 });
             }
-
-            document.querySelectorAll('.delete-task-type-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const index = parseInt(btn.dataset.index);
-                    taskTypes.splice(index, 1);
-                    localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
-                    renderTaskTypes();
-                    populateTimelineTaskTypeDropdown();
-                });
-            });
         }
 
-        document.getElementById('addTaskType').addEventListener('click', () => {
+        document.getElementById('addTaskType').addEventListener('click', async () => {
             const taskTypeInput = document.getElementById('taskTypeInput');
-            const taskTypeName = taskTypeInput.value.trim();
+            const taskType = taskTypeInput.value.trim();
 
-            if (!taskTypeName) {
+            if (!taskType) {
                 alert('請輸入作業種類名稱！');
                 return;
             }
-            if (taskTypes.includes(taskTypeName)) {
+
+            if (taskTypes.includes(taskType)) {
                 alert('此作業種類已存在！');
                 return;
             }
 
-            taskTypes.push(taskTypeName);
-            localStorage.setItem('taskTypes', JSON.stringify(taskTypes));
-            taskTypeInput.value = '';
-            renderTaskTypes();
-            populateTimelineTaskTypeDropdown();
-            addLog(`已添加作業種類 ${taskTypeName}`);
+            taskTypes.push(taskType);
+
+            try {
+                const response = await fetch('http://localhost:5000/task_types', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskTypes.map((type, index) => ({ id: index + 1, taskType: type })))
+                });
+
+                if (!response.ok) throw new Error('後端回應錯誤');
+                const result = await response.json();
+
+                taskTypes = result.task_types.map(t => t.taskType); // 後端回傳物件陣列，轉回字串陣列
+                taskTypeInput.value = '';
+                renderTaskTypes();
+                populateTimelineTaskTypeDropdown?.();
+                addLog(`已添加作業種類 ${taskType}`);
+            } catch (error) {
+                console.error('添加作業種類失敗：', error);
+                alert(`無法添加作業種類：${error.message}`);
+            }
         });
 
         function populateTimelineTaskTypeDropdown() {
@@ -888,8 +1101,74 @@
             });
         }
 
+        function renderStationsList() {
+            const stationList = document.getElementById('stationList');
+            const stationListMessage = document.getElementById('stationListMessage');
+            stationList.innerHTML = '';
+
+            if (stations.length === 0) {
+                stationListMessage.textContent = '尚未添加站點，請在上面輸入並添加。';
+            } else {
+                stationListMessage.textContent = '';
+                stations.forEach((station, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'station-item flex justify-between items-center mb-2';
+                    li.innerHTML = `
+                        <span>站點: ${station.name}</span>
+                        <div>
+                            <button class="move-up-btn bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-2 rounded mr-2" data-index="${index}" ${index === 0 ? 'disabled' : ''}>上移</button>
+                            <button class="move-down-btn bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-2 rounded mr-2" data-index="${index}" ${index === stations.length - 1 ? 'disabled' : ''}>下移</button>
+                            <button class="delete-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-index="${index}">刪除</button>
+                        </div>
+                    `;
+                    stationList.appendChild(li);
+                });
+
+                // 移除舊的事件監聽器，避免重複綁定
+                document.querySelectorAll('.move-up-btn').forEach(btn => {
+                    btn.removeEventListener('click', handleMoveStationUp);
+                });
+                document.querySelectorAll('.move-down-btn').forEach(btn => {
+                    btn.removeEventListener('click', handleMoveStationDown);
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.removeEventListener('click', handleDeleteStation);
+                });
+
+                // 綁定新的事件監聽器
+                document.querySelectorAll('.move-up-btn').forEach(btn => {
+                    btn.addEventListener('click', handleMoveStationUp);
+                });
+                document.querySelectorAll('.move-down-btn').forEach(btn => {
+                    btn.addEventListener('click', handleMoveStationDown);
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', handleDeleteStation);
+                });
+            }
+
+            updateStationPositionDropdown();
+        }
+
+        // 獨立的事件處理函數
+        async function handleMoveStationUp(event) {
+            const index = parseInt(event.target.dataset.index);
+            moveStationUp(index);
+        }
+
+        async function handleMoveStationDown(event) {
+            const index = parseInt(event.target.dataset.index);
+            moveStationDown(index);
+        }
+
+        async function handleDeleteStation(event) {
+            const index = parseInt(event.target.dataset.index);
+            deleteStation(index);
+        }
+
         function renderStations() {
-            console.log(`開始執行 renderStations`);
+            console.log('開始執行 renderStations');
+
             const stationsDiv = document.getElementById('stations');
             if (!stationsDiv) {
                 console.error('無法找到 stations 元素');
@@ -897,7 +1176,7 @@
             }
 
             stationsDiv.innerHTML = ''; // 清空現有內容
-            console.log(`已清空 stationsDiv 內容`);
+            console.log('已清空 stationsDiv 內容');
 
             stations.forEach((station, index) => {
                 const stationDiv = document.createElement('div');
@@ -905,42 +1184,45 @@
                 stationDiv.dataset.stationIndex = index;
 
                 let workpieceItems = '';
+
                 const workpiecesAtStation = Object.keys(workpieces).filter(wpId => {
                     const wp = workpieces[wpId];
                     if (!wp) {
                         console.warn(`工件 ${wpId} 不存在於 workpieces 中`);
                         return false;
                     }
-                    // 只顯示「進行中」的工件，並確保路徑包含當前站點
+
                     const isInProgress = wp.status === '進行中';
                     const isInPath = wp.path.includes(index);
-                    console.log(`工件 ${wpId} 狀態：${wp.status}, 是否在路徑中：${isInPath}, 是否顯示：${isInProgress && isInPath}`);
+
                     return isInPath && isInProgress;
                 });
 
-                console.log(`站點 ${station.name} 顯示的工件數量：${workpiecesAtStation.length}, 工件ID：${workpiecesAtStation.join(', ')}`);
+                if (workpiecesAtStation.length === 0) {
+                    workpieceItems = '<div class="text-gray-400 italic mt-2">無工件</div>';
+                } else {
+                    workpiecesAtStation.forEach(wpId => {
+                        const wp = workpieces[wpId];
+                        const pathIndex = wp.path.indexOf(index);
+                        const startTime = wp.stationTimes[pathIndex].startTime;
 
-                workpiecesAtStation.forEach(wpId => {
-                    const wp = workpieces[wpId];
-                    const pathIndex = wp.path.indexOf(index);
-                    const startTime = wp.stationTimes[pathIndex].startTime;
-                    workpieceItems += `
-                        <div class="workpiece-item flex items-center justify-center mt-2 p-2 border rounded">
-                            <span class="mr-2">${wpId}</span>
-                            <span class="mr-2">開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算'}</span>
-                        </div>
-                    `;
-                });
+                        workpieceItems += `
+                            <div class="workpiece-item flex items-center justify-center mt-2 p-2 border rounded">
+                                <span class="mr-2">${wpId}</span>
+                                <span class="mr-2">開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算'}</span>
+                            </div>
+                        `;
+                    });
+                }
 
                 stationDiv.innerHTML = `
                     <h2 class="text-xl font-semibold">${station.name}</h2>
                     <p class="mt-2">工件列表:</p>
-                    <div class="workpiece-container">${workpieceItems || '無工件'}</div>
+                    <div class="workpiece-container">${workpieceItems}</div>
                 `;
                 stationsDiv.appendChild(stationDiv);
             });
 
-            console.log(`完成 renderStations 執行`);
         }
 
             // 獨立的事件處理函數
@@ -956,20 +1238,7 @@
             completeWorkpiece(workpieceId, fromIndex);
         }
 
-            // 將事件處理函數獨立出來，避免重複綁定問題
-        function handleRemoveWorkpiece(event) {
-            const workpieceId = event.target.dataset.wp;
-            const fromIndex = parseInt(event.target.dataset.from);
-            removeWorkpiece(workpieceId, fromIndex);
-        }
-
-        function handleCompleteWorkpiece(event) {
-            const workpieceId = event.target.dataset.wp;
-            const fromIndex = parseInt(event.target.dataset.from);
-            completeWorkpiece(workpieceId, fromIndex);
-        }
-
-        function moveStationUp(index) {
+        async function moveStationUp(index) {
             if (index <= 0) return;
 
             [stations[index], stations[index - 1]] = [stations[index - 1], stations[index]];
@@ -983,7 +1252,7 @@
 
             Object.keys(workpieces).forEach(wpId => {
                 const wp = workpieces[wpId];
-                if (wp.status === 'canceled') return;
+                if (wp.status === '已抽單') return;
 
                 wp.path = wp.path.map(stationIdx => {
                     if (stationIdx === index) return index - 1;
@@ -1008,7 +1277,7 @@
 
             Object.keys(tasks).forEach(taskId => {
                 const task = tasks[taskId];
-                if (task.status === 'canceled') return;
+                if (task.status === '已抽單') return;
 
                 if (task.stationIndex === index) {
                     task.stationIndex = index - 1;
@@ -1017,10 +1286,52 @@
                 }
             });
 
-            localStorage.setItem('stations', JSON.stringify(stations));
-            localStorage.setItem('capacities', JSON.stringify(capacities));
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+            // 將更新後的資料發送到後端
+            try {
+                const stationsResponse = await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations)
+                });
+                if (!stationsResponse.ok) {
+                    throw new Error(`後端回應錯誤：${stationsResponse.statusText}`);
+                }
+                const capacitiesResponse = await fetch('http://localhost:5000/capacities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(capacities)
+                });
+                if (!capacitiesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${capacitiesResponse.statusText}`);
+                }
+                const workpiecesResponse = await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+                if (!workpiecesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${workpiecesResponse.statusText}`);
+                }
+                const tasksResponse = await fetch('http://localhost:5000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tasks)
+                });
+                if (!tasksResponse.ok) {
+                    throw new Error(`後端回應錯誤：${tasksResponse.statusText}`);
+                }
+                const processingTimesResponse = await fetch('http://localhost:5000/current_processing_times', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentProcessingTimes)
+                });
+                if (!processingTimesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${processingTimesResponse.statusText}`);
+                }
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+                alert('無法調整站點順序，請檢查後端服務是否正常');
+            }
 
             renderStationsList();
             renderProcessingTimesInputs();
@@ -1034,7 +1345,7 @@
             addLog(`站點 ${stations[index].name} 已上移`);
         }
 
-        function moveStationDown(index) {
+        async function moveStationDown(index) {
             if (index >= stations.length - 1) return;
 
             [stations[index], stations[index + 1]] = [stations[index + 1], stations[index]];
@@ -1048,7 +1359,7 @@
 
             Object.keys(workpieces).forEach(wpId => {
                 const wp = workpieces[wpId];
-                if (wp.status === 'canceled') return;
+                if (wp.status === '已抽單') return;
 
                 wp.path = wp.path.map(stationIdx => {
                     if (stationIdx === index) return index + 1;
@@ -1073,7 +1384,7 @@
 
             Object.keys(tasks).forEach(taskId => {
                 const task = tasks[taskId];
-                if (task.status === 'canceled') return;
+                if (task.status === '已抽單') return;
 
                 if (task.stationIndex === index) {
                     task.stationIndex = index + 1;
@@ -1082,10 +1393,52 @@
                 }
             });
 
-            localStorage.setItem('stations', JSON.stringify(stations));
-            localStorage.setItem('capacities', JSON.stringify(capacities));
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+            // 將更新後的資料發送到後端
+            try {
+                const stationsResponse = await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations)
+                });
+                if (!stationsResponse.ok) {
+                    throw new Error(`後端回應錯誤：${stationsResponse.statusText}`);
+                }
+                const capacitiesResponse = await fetch('http://localhost:5000/capacities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(capacities)
+                });
+                if (!capacitiesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${capacitiesResponse.statusText}`);
+                }
+                const workpiecesResponse = await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+                if (!workpiecesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${workpiecesResponse.statusText}`);
+                }
+                const tasksResponse = await fetch('http://localhost:5000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tasks)
+                });
+                if (!tasksResponse.ok) {
+                    throw new Error(`後端回應錯誤：${tasksResponse.statusText}`);
+                }
+                const processingTimesResponse = await fetch('http://localhost:5000/current_processing_times', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentProcessingTimes)
+                });
+                if (!processingTimesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${processingTimesResponse.statusText}`);
+                }
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+                alert('無法調整站點順序，請檢查後端服務是否正常');
+            }
 
             renderStationsList();
             renderProcessingTimesInputs();
@@ -1099,21 +1452,22 @@
             addLog(`站點 ${stations[index].name} 已下移`);
         }
 
-        function deleteStation(index) {
+        async function deleteStation(index) {
             const stationName = stations[index].name;
-            stations.splice(index, 1);
-            localStorage.setItem('stations', JSON.stringify(stations));
+            const deletedStationId = stations[index].id; // 獲取要刪除的站點 ID
+            stations.splice(index, 1); // 從 stations 陣列中移除站點
 
+            // 更新 capacities，移除對應站點的處理時間
             capacities = capacities.map(item => ({
                 capacity: item.capacity,
                 processingTimes: item.processingTimes.filter((_, i) => i !== index)
             }));
-            localStorage.setItem('capacities', JSON.stringify(capacities));
             currentProcessingTimes = currentProcessingTimes.filter((_, i) => i !== index);
 
+            // 更新 workpieces 中的路徑和時間
             Object.keys(workpieces).forEach(wpId => {
                 const wp = workpieces[wpId];
-                if (wp.status === 'canceled') return;
+                if (wp.status === '已抽單') return;
 
                 const pathIndex = wp.path.indexOf(index);
                 if (pathIndex !== -1) {
@@ -1128,29 +1482,87 @@
                 }
             });
 
+            // 處理路徑變空的工件
             Object.keys(workpieces).forEach(wpId => {
                 const wp = workpieces[wpId];
-                if (wp.status !== 'canceled' && wp.path.length === 0) {
-                    wp.status = 'canceled';
+                if (wp.status !== '已抽單' && wp.path.length === 0) {
+                    wp.status = '已抽單';
                     wp.currentStation = null;
                 }
             });
 
+            // 更新 tasks 中的站點索引
             Object.keys(tasks).forEach(taskId => {
                 const task = tasks[taskId];
-                if (task.status === 'canceled') return;
+                if (task.status === '已抽單') return;
 
                 if (task.stationIndex === index) {
-                    task.status = 'canceled';
+                    task.status = '已抽單';
                 } else if (task.stationIndex > index) {
                     task.stationIndex -= 1;
                 }
             });
 
+            // 更新站點時間
             updateStationTimesAfterDelete(index);
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-            localStorage.setItem('tasks', JSON.stringify(tasks));
 
+            // 將更新後的資料發送到後端
+            try {
+                const stationsResponse = await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations) // 發送更新後的 stations 陣列
+                });
+                if (!stationsResponse.ok) {
+                    throw new Error(`後端回應錯誤：${stationsResponse.statusText}`);
+                }
+                const stationsResult = await stationsResponse.json();
+                stations = stationsResult.stations; // 更新本地 stations 陣列，包含後端返回的新 id
+
+                const capacitiesResponse = await fetch('http://localhost:5000/capacities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(capacities)
+                });
+                if (!capacitiesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${capacitiesResponse.statusText}`);
+                }
+
+                const workpiecesResponse = await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+                if (!workpiecesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${workpiecesResponse.statusText}`);
+                }
+
+                const tasksResponse = await fetch('http://localhost:5000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tasks)
+                });
+                if (!tasksResponse.ok) {
+                    throw new Error(`後端回應錯誤：${tasksResponse.statusText}`);
+                }
+
+                const processingTimesResponse = await fetch('http://localhost:5000/current_processing_times', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentProcessingTimes)
+                });
+                if (!processingTimesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${processingTimesResponse.statusText}`);
+                }
+
+                console.log(`成功刪除站點 ${stationName} (ID: ${deletedStationId}) 並同步到後端`);
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+                alert('無法刪除站點，請檢查後端服務是否正常');
+                return; // 避免後續渲染執行
+            }
+
+            // 重新渲染前端頁面
             renderStationsList();
             renderProcessingTimesInputs();
             renderCapacities();
@@ -1163,44 +1575,66 @@
             addLog(`已刪除站點 ${stationName}`);
         }
 
-        function updateStationTimesAfterDelete(deletedIndex) {
-            const calculationDetails = [];
+        async function updateStationTimesAfterDelete(deletedIndex) {
+            const details = [];
             stations.forEach((station, stationIdx) => {
                 let lastCompletionTime = null;
                 Object.keys(workpieces)
-                .map(wpId => ({ wpId, wp: workpieces[wpId] }))
-                .filter(item => item.wp.status === '進行中') // 只考慮「進行中」的工件
-                .sort((a, b) => (a.wp.stationTimes[0].startTime || Date.now()) - (b.wp.stationTimes[0].startTime || Date.now()))
-                .forEach(({ wpId, wp }) => {
-                    const pathIndex = wp.path.indexOf(stationIdx);
-                    if (pathIndex === -1) return;
+                    .map(wpId => ({ wpId, wp: workpieces[wpId] }))
+                    .filter(item => item.wp.status === '進行中')
+                    .sort((a, b) => (a.wp.stationTimes[0].startTime || Date.now()) - (b.wp.stationTimes[0].startTime || Date.now()))
+                    .forEach(({ wpId, wp }) => {
+                        const pathIndex = wp.path.indexOf(stationIdx);
+                        if (pathIndex === -1) return;
 
-                    const timeToStart = pathIndex === 0 ? wp.stationTimes[0].startTime : wp.stationTimes[pathIndex].startTime;
-                    if (lastCompletionTime && timeToStart < lastCompletionTime) {
-                    wp.stationTimes[pathIndex].startTime = lastCompletionTime;
-                    const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
-                    wp.stationTimes[pathIndex].endTime = lastCompletionTime + (processingTime * 60 * 1000);
-                    }
+                        const timeToStart = pathIndex === 0 ? wp.stationTimes[0].startTime : wp.stationTimes[pathIndex].startTime;
+                        if (lastCompletionTime && timeToStart < lastCompletionTime) {
+                            wp.stationTimes[pathIndex].startTime = lastCompletionTime;
+                            const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
+                            wp.stationTimes[pathIndex].endTime = lastCompletionTime + (processingTime * 60 * 1000);
+                        }
 
-                    lastCompletionTime = wp.stationTimes[pathIndex].endTime;
+                        lastCompletionTime = wp.stationTimes[pathIndex].endTime;
 
-                    calculationDetails.push({
-                    workpieceId: wpId,
-                    stationName: station.name,
-                    lastCompletionTimeAtStation: lastCompletionTime || null,
-                    startTimeForThisStation: wp.stationTimes[pathIndex].startTime,
-                    processingTime: getProcessingTimeForWorkpiece(wp, stationIdx),
-                    completionTime: wp.stationTimes[pathIndex].endTime
+                        details.push({
+                            workpieceId: wpId,
+                            stationName: station.name,
+                            lastCompletionTimeAtStation: lastCompletionTime || null,
+                            startTimeForThisStation: wp.stationTimes[pathIndex].startTime,
+                            processingTime: getProcessingTimeForWorkpiece(wp, stationIdx),
+                            completionTime: wp.stationTimes[pathIndex].endTime
+                        });
                     });
-                });
                 station.startTime = lastCompletionTime;
             });
 
-            addMonitorLog(`刪除站點後更新時間`, calculationDetails);
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
+            addLog(`刪除站點後更新時間`, details);
+
+            // 將更新後的資料發送到後端
+            try {
+                const workpiecesResponse = await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+                if (!workpiecesResponse.ok) {
+                    throw new Error(`後端回應錯誤：${workpiecesResponse.statusText}`);
+                }
+                const stationsResponse = await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations)
+                });
+                if (!stationsResponse.ok) {
+                    throw new Error(`後端回應錯誤：${stationsResponse.statusText}`);
+                }
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+                alert('無法更新站點時間，請檢查後端服務是否正常');
+            }
         }
 
-        document.getElementById('addStation').addEventListener('click', () => {
+        document.getElementById('addStation').addEventListener('click', async () => {
             const stationInput = document.getElementById('stationInput');
             const positionSelect = document.getElementById('stationPosition');
             const stationName = stationInput.value.trim();
@@ -1223,29 +1657,73 @@
                 stations.unshift(newStation);
                 capacities = capacities.map(item => ({
                     capacity: item.capacity,
-                    processingTimes: [10, ...item.processingTimes]
+                    processingTimes: [null, ...item.processingTimes]
                 }));
-                currentProcessingTimes.unshift(10);
+                currentProcessingTimes.unshift(null);
             } else if (position === 'end') {
                 insertIndex = stations.length;
                 stations.push(newStation);
                 capacities = capacities.map(item => ({
                     capacity: item.capacity,
-                    processingTimes: [...item.processingTimes, 10]
+                    processingTimes: [...item.processingTimes, null]
                 }));
-                currentProcessingTimes.push(10);
+                currentProcessingTimes.push(null);
             } else {
                 insertIndex = parseInt(position.split('_')[1]);
                 stations.splice(insertIndex, 0, newStation);
                 capacities = capacities.map(item => ({
                     capacity: item.capacity,
-                    processingTimes: [...item.processingTimes.slice(0, insertIndex), 10, ...item.processingTimes.slice(insertIndex)]
+                    processingTimes: [...item.processingTimes.slice(0, insertIndex), null, ...item.processingTimes.slice(insertIndex)]
                 }));
-                currentProcessingTimes.splice(insertIndex, 0, 10);
+                currentProcessingTimes.splice(insertIndex, 0, null);
             }
 
-            localStorage.setItem('stations', JSON.stringify(stations));
-            localStorage.setItem('capacities', JSON.stringify(capacities));
+            // 將新站點發送到後端
+            try {
+                const response = await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations) // ✅ 傳送整個站點列表
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '後端回應錯誤');
+                }
+                const result = await response.json();
+
+                // 更新 capacities 和 currentProcessingTimes
+                const capacitiesResponse = await fetch('http://localhost:5000/capacities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(capacities)
+                });
+                if (!capacitiesResponse.ok) {
+                    const errorData = await capacitiesResponse.json();
+                    throw new Error(errorData.error || '後端回應錯誤');
+                }
+
+                const processingTimesResponse = await fetch('http://localhost:5000/current_processing_times', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentProcessingTimes)
+                });
+                if (!processingTimesResponse.ok) {
+                    const errorData = await processingTimesResponse.json();
+                    throw new Error(errorData.error || '後端回應錯誤');
+                }
+            } catch (error) {
+                console.error('更新站點到後端失敗：', error);
+                alert(`無法添加站點：${error.message}`);
+
+                // 回滾
+                stations.splice(insertIndex, 1);
+                capacities = capacities.map(item => ({
+                    capacity: item.capacity,
+                    processingTimes: item.processingTimes.filter((_, idx) => idx !== insertIndex)
+                }));
+                currentProcessingTimes.splice(insertIndex, 1);
+                return;
+            }
 
             renderStationsList();
             renderProcessingTimesInputs();
@@ -1261,184 +1739,266 @@
         });
 
         function renderProcessingTimesInputs() {
-            const container = document.getElementById('processingTimesContainer');
-            container.innerHTML = '';
+            const processingTimesContainer = document.getElementById('processingTimesContainer');
+            processingTimesContainer.innerHTML = '';
+
+            // 為每個站點生成作業時間輸入框
             stations.forEach((station, index) => {
                 const div = document.createElement('div');
-                div.className = 'flex-1';
+                div.className = 'processing-time-item';
                 div.innerHTML = `
-                    <label class="block mb-2">${station.name}作業時間（分鐘）：</label>
-                    <input type="number" id="processingTime${index}" class="border p-2 rounded w-full" placeholder="輸入作業時間" min="0.1" step="0.1" />
+                    <label class="block mb-2">${station.name} 作業時間:</label>
+                    <input type="number" id="processingTime${index}" class="border p-2 rounded" step="0.1" placeholder="分鐘" />
                 `;
-                container.appendChild(div);
+                processingTimesContainer.appendChild(div);
+            });
+
+            // 為每個作業時間輸入框添加變更事件監聽器
+            document.querySelectorAll(`#processingTimesContainer input[id^="processingTime"]`).forEach(input => {
+                input.addEventListener('change', async () => {
+                    const index = parseInt(input.id.replace('processingTime', ''));
+                    const newValue = input.value ? parseFloat(input.value) : null; // 允許空值
+                    
+                    // 驗證輸入值（僅檢查是否為數字，允許 0 或負數）
+                    if (input.value && (isNaN(newValue) || !Number.isFinite(newValue))) {
+                        alert('請輸入有效的作業時間！');
+                        input.value = currentProcessingTimes[index] || ''; // 恢復原值
+                        return;
+                    }
+
+                    // 更新 currentProcessingTimes，允許 null
+                    currentProcessingTimes[index] = newValue;
+
+                    // 將更新後的處理時間發送到後端
+                    try {
+                        const response = await fetch('http://localhost:5000/current_processing_times', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(currentProcessingTimes)
+                        });
+                        if (!response.ok) {
+                            throw new Error(`後端回應錯誤：${response.statusText}`);
+                        }
+                        addLog(`更新站點 ${stations[index].name} 的作業時間為 ${newValue !== null ? newValue : '未設置'} 分鐘`);
+                    } catch (error) {
+                        console.error('更新處理時間到後端失敗：', error);
+                        alert('無法更新處理時間，請檢查後端服務是否正常');
+                        input.value = currentProcessingTimes[index] || ''; // 恢復原值
+                    }
+                });
             });
         }
 
-        function renderCapacities() {
-            const capacityList = document.getElementById('capacityList');
-            const capacityMessage = document.getElementById('capacityListMessage');
-            capacityList.innerHTML = '';
-            
-            if (capacities.length === 0) {
-                capacityMessage.textContent = '尚未添加容量，請在上面輸入並添加。';
-            } else {
-                capacityMessage.textContent = '';
-                capacities.forEach((item, index) => {
-                    if (item && item.capacity && Array.isArray(item.processingTimes) && item.processingTimes.length === stations.length) {
-                        const li = document.createElement('li');
-                        li.className = 'flex justify-between items-center mb-2';
-                        let processingTimesText = stations.map((station, idx) => `${station.name}: ${item.processingTimes[idx]}分`).join(', ');
-                        li.innerHTML = `
-                            <span>容量: ${item.capacity}, 作業時間（${processingTimesText}）</span>
-                            <div>
-                                <button class="edit-btn bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded mr-2" data-index="${index}">編輯</button>
-                                <button class="delete-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-index="${index}">刪除</button>
-                            </div>
-                        `;
-                        capacityList.appendChild(li);
-                    }
-                });
-            }
 
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const index = parseInt(btn.dataset.index);
-                    capacities.splice(index, 1);
-                    localStorage.setItem('capacities', JSON.stringify(capacities));
-                    renderCapacities();
-                    populateTimelineCapacityDropdown();
-                });
+
+        function renderCapacities() {
+            const capacitiesList = document.getElementById('capacityList');
+            if (!capacitiesList) {
+                console.error('找不到 capacityList 元素');
+                return;
+            }
+            capacitiesList.innerHTML = ''; // 清空現有內容
+
+            capacities.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-2 border-b';
+
+                const processingTimeText = item.processingTimes.map((time, i) => {
+                    const stationName = stations[i]?.name || `站點${i + 1}`;
+                    return `${stationName}: ${time !== null ? time : '未設置'}`;
+                }).join(', ');
+
+                div.innerHTML = `
+                    <span>容量: ${item.capacity} ml, 作業時間: ${processingTimeText}</span>
+                    <div>
+                        <button class="delete-capacity-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded" data-index="${index}">
+                            刪除
+                        </button>
+                    </div>
+                `;
+                capacitiesList.appendChild(div);
             });
 
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const index = parseInt(btn.dataset.index);
-                    const item = capacities[index];
+            // 綁定刪除按鈕事件
+            document.querySelectorAll('.delete-capacity-btn').forEach(btn => {
+                btn.addEventListener('click', handleDeleteCapacity);
+            });
 
-                    const existingModal = document.querySelector('.capacity-modal');
-                    if (existingModal) {
-                        existingModal.remove();
-                    }
+            populateTimelineCapacityDropdown();
+        }
+        
 
-                    const modal = document.createElement('div');
-                    modal.className = 'capacity-modal';
-                    modal.style.left = '50%';
-                    modal.style.top = '50%';
-                    modal.style.transform = 'translate(-50%, -50%)';
 
-                    let processingTimeInputs = '';
-                    stations.forEach((station, idx) => {
-                        processingTimeInputs += `
-                            <div class="flex-1">
-                                <label class="block mb-2">${station.name}作業時間（分鐘）：</label>
-                                <input type="number" id="editProcessingTime${idx}" class="border p-2 rounded w-full" value="${item.processingTimes[idx]}" min="0.1" step="0.1" />
-                            </div>
-                        `;
-                    });
+        // 獨立的事件處理函數
+        async function handleDeleteCapacity(event) {
+            const index = parseInt(event.target.dataset.index);
+            const capacityToDelete = capacities[index]; // 保存要刪除的項目以便回滾和日誌記錄
+            capacities.splice(index, 1);
 
-                    modal.innerHTML = `
-                        <div class="modal-header">編輯容量與作業時間</div>
-                        <div class="flex flex-row gap-4 mb-4">
-                            <div class="flex-1">
-                                <label class="block mb-2">容量：</label>
-                                <input type="text" id="editCapacityInput" class="border p-2 rounded w-full" value="${item.capacity}" />
-                            </div>
-                            <div class="flex-4 flex flex-row gap-4">
-                                ${processingTimeInputs}
-                            </div>
-                        </div>
-                        <div class="buttons">
-                            <button class="confirm-btn">確認</button>
-                            <button class="cancel-btn">取消</button>
-                        </div>
-                    `;
+            // 將更新後的資料發送到後端
+            try {
+                const response = await fetch('http://localhost:5000/capacities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(capacities)
+                });
+                if (!response.ok) {
+                    throw new Error(`後端回應錯誤：${response.statusText}`);
+                }
+                const result = await response.json();
+                capacities = result.capacities; // 更新本地 capacities 陣列
+                console.log('成功刪除容量並更新後端');
+                renderCapacities();
+                renderProcessingTimesInputs();
+                addLog(`已刪除容量 ${capacityToDelete.capacity}`); // 添加日誌記錄
+            } catch (error) {
+                console.error('更新容量到後端失敗：', error);
+                alert(`無法刪除容量：${error.message}`);
+                // 回滾操作
+                capacities.splice(index, 0, capacityToDelete);
+                renderCapacities();
+            }
+        }
 
-                    document.body.appendChild(modal);
+        function handleEditCapacity(event) {
+            const index = parseInt(event.target.dataset.index);
+            const item = capacities[index];
 
-                    let isDragging = false;
-                    let currentX;
-                    let currentY;
-                    let initialX;
-                    let initialY;
+            const existingModal = document.querySelector('.capacity-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
 
-                    const header = modal.querySelector('.modal-header');
-                    header.addEventListener('mousedown', (e) => {
-                        isDragging = true;
-                        initialX = e.clientX - currentX;
-                        initialY = e.clientY - currentY;
+            const modal = document.createElement('div');
+            modal.className = 'capacity-modal';
+            modal.style.left = '50%';
+            modal.style.top = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
 
-                        document.addEventListener('mousemove', onMouseMove);
-                        document.addEventListener('mouseup', onMouseUp);
-                    });
+            let processingTimeInputs = '';
+            stations.forEach((station, idx) => {
+                processingTimeInputs += `
+                    <div class="flex-1">
+                        <label class="block mb-2">${station.name} 作業時間（分鐘）：</label>
+                        <input type="number" id="editProcessingTime${idx}" class="border p-2 rounded w-full" value="${item.processingTimes[idx]}" min="0.1" step="0.1" />
+                    </div>
+                `;
+            });
 
-                    function onMouseMove(e) {
-                        if (isDragging) {
-                            e.preventDefault();
-                            currentX = e.clientX - initialX;
-                            currentY = e.clientY - initialY;
+            modal.innerHTML = `
+                <div class="modal-header">編輯容量與作業時間</div>
+                <div class="flex flex-row gap-4 mb-4">
+                    <div class="flex-1">
+                        <label class="block mb-2">容量：</label>
+                        <input type="text" id="editCapacityInput" class="border p-2 rounded w-full" value="${item.capacity}" />
+                    </div>
+                    <div class="flex-4 flex flex-row gap-4">
+                        ${processingTimeInputs}
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="confirm-btn">確認</button>
+                    <button class="cancel-btn">取消</button>
+                </div>
+            `;
 
-                            modal.style.left = `${currentX + (modal.offsetWidth / 2)}px`;
-                            modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
-                            modal.style.transform = 'none';
-                        }
-                    }
+            document.body.appendChild(modal);
 
-                    function onMouseUp() {
-                        isDragging = false;
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                    }
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
 
-                    currentX = window.innerWidth / 2 - (modal.offsetWidth / 2);
-                    currentY = window.innerHeight / 2 - (modal.offsetHeight / 2);
+            const header = modal.querySelector('.modal-header');
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                initialX = e.clientX - currentX;
+                initialY = e.clientY - currentY;
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+
                     modal.style.left = `${currentX + (modal.offsetWidth / 2)}px`;
                     modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
                     modal.style.transform = 'none';
+                }
+            }
 
-                    modal.querySelector('.confirm-btn').addEventListener('click', () => {
-                        const newCapacity = document.getElementById('editCapacityInput').value.trim();
-                        const newProcessingTimes = stations.map((_, idx) => {
-                            const input = document.getElementById(`editProcessingTime${idx}`);
-                            return parseFloat(input.value);
-                        });
+            function onMouseUp() {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
 
-                        if (!newCapacity) {
-                            alert('請輸入容量！');
-                            return;
-                        }
-                        if (capacities.some((c, i) => i !== index && c.capacity === newCapacity)) {
-                            alert('此容量已存在！');
-                            return;
-                        }
-                        if (newProcessingTimes.some(time => isNaN(time) || time < 0.1)) {
-                            alert('請為所有站點輸入有效的作業時間（至少 0.1 分鐘）！');
-                            return;
-                        }
+            currentX = window.innerWidth / 2 - (modal.offsetWidth / 2);
+            currentY = window.innerHeight / 2 - (modal.offsetHeight / 2);
+            modal.style.left = `${currentX + (modal.offsetWidth / 2)}px`;
+            modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
+            modal.style.transform = 'none';
 
-                        capacities[index] = {
-                            capacity: newCapacity,
-                            processingTimes: newProcessingTimes
-                        };
-                        localStorage.setItem('capacities', JSON.stringify(capacities));
-                        renderCapacities();
-                        populateTimelineCapacityDropdown();
-                        modal.remove();
-                        addLog(`已編輯容量 ${newCapacity} 的作業時間`);
-                    });
-
-                    modal.querySelector('.cancel-btn').addEventListener('click', () => {
-                        modal.remove();
-                    });
+            modal.querySelector('.confirm-btn').addEventListener('click', async () => {
+                const newCapacity = document.getElementById('editCapacityInput').value.trim();
+                const newProcessingTimes = stations.map((_, idx) => {
+                    const input = document.getElementById(`editProcessingTime${idx}`);
+                    return parseFloat(input.value);
                 });
-            });
-        }
 
-        document.getElementById('addCapacity').addEventListener('click', () => {
+                if (!newCapacity) {
+                    alert('請輸入容量！');
+                    return;
+                }
+                if (capacities.some((c, i) => i !== index && c.capacity === newCapacity)) {
+                    alert('此容量已存在！');
+                    return;
+                }
+                if (newProcessingTimes.some(time => isNaN(time) || time < 0.1)) {
+                    alert('請為所有站點輸入有效的作業時間（至少 0.1 分鐘）！');
+                    return;
+                }
+
+                capacities[index] = {
+                    capacity: newCapacity,
+                    processingTimes: newProcessingTimes
+                };
+
+                // 將更新後的資料發送到後端
+                try {
+                    const response = await fetch('http://localhost:5000/capacities', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(capacities)
+                    });
+                    if (!response.ok) {
+                        throw new Error(`後端回應錯誤：${response.statusText}`);
+                    }
+                    renderCapacities();
+                    modal.remove();
+                    addLog(`已編輯容量 ${newCapacity} 的作業時間`);
+                } catch (error) {
+                    console.error('更新資料到後端失敗：', error);
+                    alert('無法更新容量，請檢查後端服務是否正常');
+                }
+            });
+
+            modal.querySelector('.cancel-btn').addEventListener('click', () => {
+                modal.remove();
+            });
+        }  
+
+        document.getElementById('addCapacity').addEventListener('click', async () => {
             const capacityInput = document.getElementById('capacityInput');
             const capacity = capacityInput.value.trim();
             const processingTimes = stations.map((_, index) => {
                 const input = document.getElementById(`processingTime${index}`);
-                return parseFloat(input.value);
+                return input.value ? parseFloat(input.value) : null;
             });
 
             if (!capacity) {
@@ -1449,8 +2009,8 @@
                 alert('此容量已存在！');
                 return;
             }
-            if (processingTimes.some(time => isNaN(time) || time < 0.1)) {
-                alert('請為所有站點輸入有效的作業時間（至少 0.1 分鐘）！');
+            if (processingTimes.some(time => time !== null && (isNaN(time) || !Number.isFinite(time)))) {
+                alert('請為所有站點輸入有效的作業時間！');
                 return;
             }
 
@@ -1459,26 +2019,34 @@
                 processingTimes: processingTimes
             };
             capacities.push(newItem);
-            localStorage.setItem('capacities', JSON.stringify(capacities));
-            capacityInput.value = '';
-            stations.forEach((_, index) => {
-                document.getElementById(`processingTime${index}`).value = '';
-            });
-            renderCapacities();
-            populateTimelineCapacityDropdown();
+
+            // 將新容量發送到後端
+            try {
+                const response = await fetch('http://localhost:5000/capacities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(capacities)
+                });
+                if (!response.ok) {
+                    throw new Error(`後端回應錯誤：${response.statusText}`);
+                }
+                const result = await response.json();
+                capacities = result.capacities; // 更新本地 capacities 陣列
+                console.log('成功添加容量並更新後端');
+                capacityInput.value = '';
+                stations.forEach((_, index) => {
+                    document.getElementById(`processingTime${index}`).value = '';
+                });
+                renderCapacities();
+            } catch (error) {
+                console.error('更新容量到後端失敗：', error);
+                alert(`無法添加容量：${error.message}`);
+            }
         });
 
         function populateTimelineCapacityDropdown() {
             const capacitySelect = document.getElementById('timelineCapacitySelect');
             const capacityMessage = document.getElementById('timelineCapacityMessage');
-            let capacities = [];
-            try {
-                capacities = JSON.parse(localStorage.getItem('capacities')) || [];
-            } catch (error) {
-                console.error('無法從 localStorage 載入容量數據：', error);
-                capacityMessage.textContent = '無法載入容量列表，請檢查瀏覽器設定或稍後再試。';
-                return;
-            }
 
             capacitySelect.innerHTML = '<option value="">請選擇容量</option>';
             if (capacities.length === 0) {
@@ -1506,20 +2074,6 @@
             }
         });
 
-        function renderStationCheckboxes() {
-            const container = document.getElementById('stationCheckboxes');
-            if (container) {
-                container.innerHTML = '';
-                stations.forEach((station, index) => {
-                    const label = document.createElement('label');
-                    label.innerHTML = `
-                        <input type="checkbox" name="station" value="${index}" ${index === 0 ? 'checked' : ''}> ${station.name}
-                    `;
-                    container.appendChild(label);
-                });
-            }
-        }
-
         function renderTimelineStationCheckboxes() {
             const container = document.getElementById('timelineStationCheckboxes');
             container.innerHTML = '';
@@ -1538,7 +2092,7 @@
 
 
 
-        function renderWorkpieces() {
+        function renderWorkpieces(filter = null) {
             const workpieceList = document.getElementById('workpieceList');
             const timelineWorkpieceList = document.getElementById('timelineWorkpieceList');
 
@@ -1546,16 +2100,34 @@
             workpieceList.innerHTML = '';
             timelineWorkpieceList.innerHTML = '';
 
-            Object.keys(workpieces).forEach(wpId => {
+            // 🔥【1】取得要渲染的工件id列表（篩選）
+            let filteredWPs = Object.keys(workpieces);
+
+            if (filter && (filter.startDate || filter.endDate)) {
+                filteredWPs = filteredWPs.filter(wpId => {
+                    const wp = workpieces[wpId];
+                    if (!wp.stationTimes || wp.stationTimes.length === 0) return false;
+                    const firstStart = wp.stationTimes[0]?.startTime;
+                    if (!firstStart) return false;
+                    // 日期轉 yyyy-mm-dd
+                    const dateStr = new Date(firstStart).toISOString().slice(0, 10);
+                    let ok = true;
+                    if (filter.startDate && dateStr < filter.startDate) ok = false;
+                    if (filter.endDate && dateStr > filter.endDate) ok = false;
+                    return ok;
+                });
+            }
+
+            // 🔥【2】渲染列表
+            filteredWPs.forEach(wpId => {
                 const wp = workpieces[wpId];
                 const tr = document.createElement('tr');
                 const startTimes = wp.stationTimes.map(time => time.startTime ? new Date(time.startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
                 const endTimes = wp.stationTimes.map(time => time.endTime ? new Date(time.endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '尚未計算').join('<br>');
 
-                // 根據工件狀態決定操作按鈕的顯示
                 let actionButtons = '';
                 if (wp.status === '進行中') {
-                    const stationIndex = wp.path[0]; // 使用初始站點
+                    const stationIndex = wp.path[0];
                     actionButtons = `
                         <button class="remove-btn bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded mr-2" data-wp="${wpId}" data-from="${stationIndex}">抽單</button>
                         <button class="complete-btn bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded" data-wp="${wpId}" data-from="${stationIndex}">完成</button>
@@ -1564,37 +2136,44 @@
                     actionButtons = `<span class="text-gray-500">無操作</span>`;
                 }
 
-                // 確保每個欄位正確生成
                 tr.innerHTML = `
-                    <td class="border p-2 w-16">${wpId}</td>
-                    <td class="border p-2 w-24">${wp.customer || '-'}</td>
-                    <td class="border p-2 w-24">${wp.capacity || '-'}</td>
-                    <td class="border p-2 w-24">${wp.product || '-'}</td>
-                    <td class="border p-2 w-16">${wp.isUrgent ? '是' : '否'}</td>
-                    <td class="border p-2 w-24">${wp.status}</td>
-                    <td class="border p-2 w-32">${wp.path.map(idx => stations[idx]?.name || '未知站點').join(' -> ')}</td>
-                    <td class="border p-2 w-48">${startTimes}</td>
-                    <td class="border p-2 w-48">${endTimes}</td>
-                    <td class="border p-2 w-48">${actionButtons}</td>
+                    <td class="p-2 w-16">${wpId}</td>
+                    <td class="p-2 w-24">${wp.customer || '-'}</td>
+                    <td class="p-2 w-24">${wp.capacity || '-'}</td>
+                    <td class="p-2 w-24">${wp.product || '-'}</td>
+                    <td class="p-2 w-16">${wp.isUrgent ? '是' : '否'}</td>
+                    <td class="p-2 w-24">${wp.status}</td>
+                    <td class="p-2 w-32">${wp.path.map(idx => stations[idx]?.name || '未知站點').join(' -> ')}</td>
+                    <td class="p-2 w-48">${startTimes}</td>
+                    <td class="p-2 w-48">${endTimes}</td>
+                    <td class="p-2 w-48">${actionButtons}</td>
                 `;
                 workpieceList.appendChild(tr);
                 timelineWorkpieceList.appendChild(tr.cloneNode(true));
             });
 
+            // 🔥【3】查無資料處理
+            if (filteredWPs.length === 0) {
+                const tdCount = 10;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="${tdCount}" class="text-center text-gray-400">查無資料</td>`;
+                workpieceList.appendChild(tr);
+                timelineWorkpieceList.appendChild(tr.cloneNode(true));
+            }
+
             // 綁定「抽單」按鈕事件
             document.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.removeEventListener('click', handleRemoveWorkpiece); // 移除舊的事件監聽器
+                btn.removeEventListener('click', handleRemoveWorkpiece);
                 btn.addEventListener('click', handleRemoveWorkpiece);
-                console.log(`綁定 remove-btn 事件，工件ID：${btn.dataset.wp}`);
             });
 
             // 綁定「完成」按鈕事件
             document.querySelectorAll('.complete-btn').forEach(btn => {
-                btn.removeEventListener('click', handleCompleteWorkpiece); // 移除舊的事件監聽器
+                btn.removeEventListener('click', handleCompleteWorkpiece);
                 btn.addEventListener('click', handleCompleteWorkpiece);
-                console.log(`綁定 complete-btn 事件，工件ID：${btn.dataset.wp}`);
             });
-        } 
+        }
+
 
         function renderTasks() {
             const taskList = document.getElementById('taskList');
@@ -1619,23 +2198,53 @@
             });
         }
 
-        function addLog(message) {
-            const logList = document.getElementById('logList');
-            const li = document.createElement('li');
-            li.textContent = `${new Date().toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei' })}: ${message}`;
-            logList.prepend(li);
-            const logContainer = document.getElementById('log');
-            logContainer.scrollTop = logContainer.scrollHeight;
+        async function deleteTaskType(index) {
+            const taskType = taskTypes[index];
+            taskTypes.splice(index, 1); // 移除本地數據
+            try {
+                const response = await fetch('http://localhost:5000/task_types', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskTypes.map((type, index) => ({ id: index + 1, taskType: type })))
+                });
+                if (!response.ok) throw new Error('後端更新失敗');
+                renderTaskTypesList(); // 更新 UI
+                console.log('刪除作業種類成功');
+            } catch (error) {
+                console.error('刪除失敗：', error);
+                taskTypes.splice(index, 0, taskType); // 回滾
+                alert(`無法刪除：${error.message}`);
+            }
         }
 
-        function addMonitorLog(operation, calculationDetails) {
-            const timestamp = new Date().toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei' });
+        function addLog(message, details = []) {
             const logEntry = {
-                timestamp,
-                operation,
-                calculationDetails
+                timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+                operation: message,
+                details: details
             };
-            monitorLogs.unshift(logEntry);
+            monitorLogs.push(logEntry);
+
+            // 將新日誌發送到後端
+            fetch('http://localhost:5000/monitor_logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify([logEntry])
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('後端回應錯誤');
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('後端回應（監控日誌）：', result); // 調試用
+            })
+            .catch(error => {
+                console.error('更新監控日誌到後端失敗：', error);
+                monitorLogs.pop(); // 失敗時回滾
+            });
+
             renderMonitorLogs();
         }
 
@@ -1647,7 +2256,7 @@
                 li.className = 'mb-2';
                 li.innerHTML = `
                     <strong>${log.timestamp}</strong>: ${log.operation}<br>
-                    ${log.calculationDetails.map(detail => `
+                    ${log.details.map(detail => `
                         <span class="ml-4 block">${detail.workpieceId} 在 ${detail.stationName}: max(${detail.lastCompletionTimeAtStation ? new Date(detail.lastCompletionTimeAtStation).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '無'}, ${detail.startTimeForThisStation ? new Date(detail.startTimeForThisStation).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '無'}) + ${detail.processingTime}分 = ${detail.completionTime ? new Date(detail.completionTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '無'}</span>
                     `).join('')}
                 `;
@@ -1655,45 +2264,60 @@
             });
         }
 
-        function calculateNewWorkpieceTimes(wp, wpId, operation = '計算新工件時間') {
-            console.log(`計算工件 ${wpId} 的時間，操作：${operation}`);
-            const calculationDetails = [];
+        async function calculateNewWorkpieceTimes(workpiece, workpieceId, logMessage) {
+            console.log(`計算工件 ${workpieceId} 的時間，操作：${logMessage}`);
+            const details = [];
             const newStationTimes = [];
-            let currentTime = wp.stationTimes[0].startTime || Date.now();
+            let currentTime = workpiece.stationTimes[0].startTime || Date.now();
 
-            wp.path.forEach((stationIdx, pathIdx) => {
+            workpiece.path.forEach((stationIdx, pathIdx) => {
                 const station = stations[stationIdx];
                 if (!station) return;
 
                 const timeToStart = pathIdx === 0 ? currentTime : newStationTimes[pathIdx - 1].endTime;
                 const actualStartTime = timeToStart;
-                const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
+                const processingTime = getProcessingTimeForWorkpiece(workpiece, stationIdx);
                 const completionTimeAtStation = actualStartTime + (processingTime * 60 * 1000);
 
                 newStationTimes.push({
-                startTime: actualStartTime,
-                endTime: completionTimeAtStation
+                    startTime: actualStartTime,
+                    endTime: completionTimeAtStation
                 });
 
-                calculationDetails.push({
-                workpieceId: wpId,
-                stationName: station.name,
-                lastCompletionTimeAtStation: null,
-                startTimeForThisStation: actualStartTime,
-                processingTime,
-                completionTime: completionTimeAtStation
+                details.push({
+                    workpieceId: workpieceId,
+                    stationName: station.name,
+                    lastCompletionTimeAtStation: null,
+                    startTimeForThisStation: actualStartTime,
+                    processingTime,
+                    completionTime: completionTimeAtStation
                 });
 
                 currentTime = completionTimeAtStation;
                 stations[stationIdx].startTime = completionTimeAtStation;
             });
 
-            wp.stationTimes = newStationTimes;
-            addMonitorLog(operation, calculationDetails);
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-        }
+            workpiece.stationTimes = newStationTimes;
+            addLog(logMessage, details);
 
-        function addWorkpiece(source = 'timeline') {
+            // 將更新後的資料發送到後端
+            try {
+                await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+                await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations)
+                });
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+            }
+        } 
+
+        async function addWorkpiece(source = 'timeline') {
             const stationSelector = 'timelineStation';
             const capacitySelect = 'timelineCapacitySelect';
             const customerInput = 'timelineCustomerInput';
@@ -1701,158 +2325,43 @@
             const startTimeInput = 'timelineStartTimeInput';
             const urgentInput = document.getElementById('urgentInput');
 
+            // 獲取選中的站點
             const selectedStations = Array.from(document.querySelectorAll(`input[name="${stationSelector}"]:checked`)).map(input => parseInt(input.value));
             if (selectedStations.length === 0) {
                 addLog('請至少選擇一個站點');
                 return;
             }
-
             const uniqueStations = [...new Set(selectedStations)];
 
+            // 驗證容量
             const capacity = document.getElementById(capacitySelect).value;
             if (!capacity) {
                 addLog('請選擇容量');
                 return;
             }
 
+            const selectedCapacityObj = capacities.find(c => c.capacity === capacity);
+            if (!selectedCapacityObj) {
+                addLog('找不到所選容量的資料');
+                return;
+            }
+            const hasValidTimes = uniqueStations.every(idx => {
+                const t = selectedCapacityObj.processingTimes[idx];
+                return t !== null && !isNaN(t);
+            });
+            if (!hasValidTimes) {
+                alert('請為所選容量設定所有站點的作業時間，否則無法加入時間軸！');
+                addLog('新增工件失敗：該容量未設定完整作業時間');
+                return;
+            }
+
+            // 獲取輸入資料
             const customer = document.getElementById(customerInput).value.trim();
             const product = document.getElementById(productInput).value.trim();
             const startTimeInputValue = document.getElementById(startTimeInput).value;
             const isUrgent = urgentInput.checked;
 
-            let startTime = null;
-            if (startTimeInputValue) {
-                const localDate = new Date(startTimeInputValue);
-                if (!isNaN(localDate.getTime())) {
-                startTime = localDate.getTime();
-                } else {
-                addLog('開始時間格式無效');
-                return;
-                }
-            } else {
-                addLog('請輸入開始時間');
-                return;
-            }
-
-            const startStationIndex = uniqueStations[0];
-            const processingTime = currentProcessingTimes[startStationIndex];
-            const endTime = startTime + (processingTime * 60 * 1000); // 計算初始站點的結束時間
-
-            // 檢查時間重疊
-            let hasConflict = false;
-            // 檢查工件
-            Object.keys(workpieces).forEach(wpId => {
-                const wp = workpieces[wpId];
-                if (wp.status === '抽單' || wp.status === '已完成') return;
-
-                const pathIndex = wp.path.indexOf(startStationIndex);
-                if (pathIndex === -1) return;
-
-                const wpStartTime = wp.stationTimes[pathIndex].startTime;
-                const wpEndTime = wp.stationTimes[pathIndex].endTime;
-
-                if (startTime < wpEndTime && endTime > wpStartTime) {
-                hasConflict = true;
-                }
-            });
-
-            // 檢查獨立工作
-            Object.keys(tasks).forEach(taskId => {
-                const task = tasks[taskId];
-                if (task.status === '抽單') return;
-
-                if (task.stationIndex !== startStationIndex) return;
-
-                const taskStartTime = task.startTime;
-                const taskEndTime = task.endTime;
-
-                if (startTime < taskEndTime && endTime > taskStartTime) {
-                hasConflict = true;
-                }
-            });
-
-            if (hasConflict) {
-                alert('初始站已有作業，請選擇其他時間或站點！');
-                addLog('無法新增工件：初始站已有作業');
-                return;
-            }
-
-            workpieceId++;
-            const workpiece = String(workpieceId);
-
-            const initialStationTimes = [];
-            let currentTime = startTime;
-            uniqueStations.forEach((stationIdx, idx) => {
-                const processingTime = currentProcessingTimes[stationIdx];
-                const endTime = currentTime + (processingTime * 60 * 1000);
-                initialStationTimes.push({
-                startTime: currentTime,
-                endTime: endTime
-                });
-                currentTime = endTime;
-            });
-
-            workpieces[workpiece] = {
-                path: uniqueStations,
-                currentStation: startStationIndex,
-                stationTimes: initialStationTimes,
-                status: '進行中', // 初始狀態設為「進行中」
-                customer: customer || '未指定',
-                capacity: capacity || '未指定',
-                product: product || '未指定',
-                processingTimes: [...currentProcessingTimes],
-                isUrgent: isUrgent
-            };
-
-            uniqueStations.forEach(stationIndex => {
-                const station = stations[stationIndex];
-                if (stationIndex === startStationIndex) {
-                if (!station.startTime || startTime < station.startTime) {
-                    station.startTime = startTime;
-                }
-                addLog(`添加編號 ${workpiece} 至 ${station.name}，客戶: ${customer || '未指定'}，容量: ${capacity || '未指定'}，產品: ${product || '未指定'}，開始時間: ${startTime ? new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '未設置'}，急件: ${isUrgent ? '是' : '否'}`);
-                }
-            });
-
-            calculateNewWorkpieceTimes(workpieces[workpiece], workpiece, `添加工件 ${workpiece}`);
-            localStorage.setItem('workpieceId', workpieceId.toString());
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-
-            renderStations();
-            renderWorkpieces();
-            renderTimelineCharts();
-
-            document.getElementById(capacitySelect).value = '';
-            document.getElementById(customerInput).value = '';
-            document.getElementById(productInput).value = '';
-            document.getElementById(startTimeInput).value = '';
-            urgentInput.checked = false;
-            console.log('添加工件後，重置時間選擇器為空白並取消急件勾選');
-
-            switchTab('timeline');
-        }
-
-        function addTask(source = 'timeline') {
-            const taskTypeSelect = 'timelineTaskTypeSelect';
-            const startTimeInput = 'timelineTaskStartTimeInput';
-            const endTimeInput = 'timelineTaskEndTimeInput';
-            const stationSelect = 'timelineTaskStationSelect';
-
-            const taskType = document.getElementById(taskTypeSelect).value;
-            if (!taskType) {
-                addLog('請選擇作業種類');
-                return;
-            }
-
-            const startTimeInputValue = document.getElementById(startTimeInput).value;
-            const endTimeInputValue = document.getElementById(endTimeInput).value;
-            const stationIndex = parseInt(document.getElementById(stationSelect).value);
-
-            if (isNaN(stationIndex)) {
-                addLog('請選擇站點');
-                return;
-            }
-
+            // 處理開始時間
             let startTime = null;
             if (startTimeInputValue) {
                 const localDate = new Date(startTimeInputValue);
@@ -1867,11 +2376,182 @@
                 return;
             }
 
+            // 計算初始站點的結束時間
+            const startStationIndex = uniqueStations[0];
+            const processingTime = currentProcessingTimes[startStationIndex];
+            const endTime = startTime + (processingTime * 60 * 1000);
+
+            // 檢查時間衝突
+            let hasConflict = false;
+            Object.keys(workpieces).forEach(wpId => {
+                const wp = workpieces[wpId];
+                if (wp.status === '已抽單' || wp.status === '已完成') return;
+
+                const pathIndex = wp.path.indexOf(startStationIndex);
+                if (pathIndex === -1) return;
+
+                const wpStartTime = wp.stationTimes[pathIndex].startTime;
+                const wpEndTime = wp.stationTimes[pathIndex].endTime;
+
+                if (startTime < wpEndTime && endTime > wpStartTime) {
+                    hasConflict = true;
+                }
+            });
+
+            Object.keys(tasks).forEach(taskId => {
+                const task = tasks[taskId];
+                if (task.status === '已抽單') return;
+
+                if (task.stationIndex !== startStationIndex) return;
+
+                const taskStartTime = task.startTime;
+                const taskEndTime = task.endTime;
+
+                if (startTime < taskEndTime && endTime > taskStartTime) {
+                    hasConflict = true;
+                }
+            });
+
+            if (hasConflict) {
+                alert('初始站已有作業，請選擇其他時間或站點！');
+                addLog('無法新增工件：初始站已有作業');
+                return;
+            }
+
+            // 動態生成工件 ID
+            workpieceId++;
+            const workpiece = String(workpieceId);
+
+            // 初始化站點時間
+            const initialStationTimes = [];
+            let currentTime = startTime;
+            uniqueStations.forEach((stationIdx) => {
+                const processingTime = currentProcessingTimes[stationIdx];
+                const endTime = currentTime + (processingTime * 60 * 1000);
+                initialStationTimes.push({
+                    startTime: currentTime,
+                    endTime: endTime
+                });
+                currentTime = endTime;
+            });
+
+            // 創建工件資料
+            workpieces[workpiece] = {
+                path: uniqueStations,
+                currentStation: startStationIndex,
+                stationTimes: initialStationTimes,
+                status: '進行中',
+                customer: customer || '未指定',
+                capacity: capacity || '未指定',
+                product: product || '未指定',
+                processingTimes: [...currentProcessingTimes],
+                isUrgent: isUrgent
+            };
+
+            // 更新站點並記錄日誌
+            uniqueStations.forEach(stationIndex => {
+                const station = stations[stationIndex];
+                if (stationIndex === startStationIndex) {
+                    if (!station.startTime || startTime < station.startTime) {
+                        station.startTime = startTime;
+                    }
+                    addLog(`添加編號 ${workpiece} 至 ${station.name}，客戶: ${customer || '未指定'}，容量: ${capacity || '未指定'}，產品: ${product || '未指定'}，開始時間: ${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}，急件: ${isUrgent ? '是' : '否'}`);
+                }
+            });
+
+            // 計算工件時間
+            calculateNewWorkpieceTimes(workpieces[workpiece], workpiece, `添加工件 ${workpiece}`);
+
+            // 將更新後的資料發送到後端
+            try {
+                const stationsResponse = await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations)
+                });
+                if (!stationsResponse.ok) {
+                    const errorData = await stationsResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || '後端回應錯誤');
+                }
+
+                const workpiecesResponse = await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+                if (!workpiecesResponse.ok) {
+                    const errorData = await workpiecesResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || '後端回應錯誤');
+                }
+                console.log('成功更新工件和站點到後端');
+            } catch (error) {
+                console.error('更新工件和站點到後端失敗：', error);
+                alert('無法新增工件，請檢查後端服務是否正常');
+                return;
+            }
+
+            // 渲染更新
+            renderStations();
+            renderWorkpieces();
+            renderTimelineCharts();
+
+            // 重置表單
+            document.getElementById(capacitySelect).value = '';
+            document.getElementById(customerInput).value = '';
+            document.getElementById(productInput).value = '';
+            document.getElementById(startTimeInput).value = '';
+            urgentInput.checked = false;
+            console.log('添加工件後，重置時間選擇器為空白並取消急件勾選');
+
+            switchTab('timeline');
+        }
+
+        async function addTask() {
+            const taskTypeSelect = document.getElementById('timelineTaskTypeSelect');
+            const startTimeInput = document.getElementById('timelineTaskStartTimeInput');
+            const endTimeInput = document.getElementById('timelineTaskEndTimeInput');
+            const stationSelect = document.getElementById('timelineTaskStationSelect');
+
+            const taskType = taskTypeSelect.value;
+            const startTimeValue = startTimeInput.value;
+            const endTimeValue = endTimeInput.value;
+            const stationIndex = parseInt(stationSelect.value);
+
+            // 驗證作業種類
+            if (!taskType) {
+                document.getElementById('timelineTaskTypeMessage').textContent = '請選擇作業種類';
+                return;
+            } else {
+                document.getElementById('timelineTaskTypeMessage').textContent = '';
+            }
+
+            // 驗證站點選擇
+            if (isNaN(stationIndex)) {
+                addLog('請選擇站點');
+                return;
+            }
+
+            // 處理開始時間
+            let startTime = null;
+            if (startTimeValue) {
+                const localStartDate = new Date(startTimeValue);
+                if (!isNaN(localStartDate.getTime())) {
+                    startTime = localStartDate.getTime();
+                } else {
+                    addLog('開始時間格式無效');
+                    return;
+                }
+            } else {
+                addLog('請輸入開始時間');
+                return;
+            }
+
+            // 處理結束時間
             let endTime = null;
-            if (endTimeInputValue) {
-                const localDate = new Date(endTimeInputValue);
-                if (!isNaN(localDate.getTime())) {
-                    endTime = localDate.getTime();
+            if (endTimeValue) {
+                const localEndDate = new Date(endTimeValue);
+                if (!isNaN(localEndDate.getTime())) {
+                    endTime = localEndDate.getTime();
                 } else {
                     addLog('結束時間格式無效');
                     return;
@@ -1881,15 +2561,17 @@
                 return;
             }
 
+            // 驗證時間邏輯
             if (endTime <= startTime) {
                 addLog('結束時間必須晚於開始時間');
                 return;
             }
 
+            // 檢查時間衝突
             let hasConflict = false;
             Object.keys(workpieces).forEach(wpId => {
                 const wp = workpieces[wpId];
-                if (wp.status === 'canceled' || wp.status === 'completed') return;
+                if (wp.status === '已抽單' || wp.status === '已完成') return;
 
                 const pathIndex = wp.path.indexOf(stationIndex);
                 if (pathIndex === -1) return;
@@ -1902,30 +2584,28 @@
                 }
             });
 
-            Object.keys(tasks).forEach(otherTaskId => {
-                const otherTask = tasks[otherTaskId];
-                if (otherTask.status === 'canceled') return;
+            Object.keys(tasks).forEach(taskId => {
+                const task = tasks[taskId];
+                if (task.status === '已抽單') return;
 
-                if (otherTask.stationIndex !== stationIndex) return;
+                if (task.stationIndex !== stationIndex) return;
 
-                const otherStartTime = otherTask.startTime;
-                const otherEndTime = otherTask.endTime;
+                const taskStartTime = task.startTime;
+                const taskEndTime = task.endTime;
 
-                if (startTime < otherEndTime && endTime > otherStartTime) {
+                if (startTime < taskEndTime && endTime > taskStartTime) {
                     hasConflict = true;
                 }
             });
 
             if (hasConflict) {
-                alert('初始站已有作業，請選擇其他時間或站點！');
-                addLog('無法新增工作：初始站已有作業');
+                addLog('該站點在指定時間已有其他作業');
                 return;
             }
 
-            taskId++;
-            const task = String(taskId);
-
-            tasks[task] = {
+            // 動態生成 taskId
+            const taskId = String(Object.keys(tasks).length + 1);
+            tasks[taskId] = {
                 taskType: taskType,
                 stationIndex: stationIndex,
                 startTime: startTime,
@@ -1933,25 +2613,58 @@
                 status: 'active'
             };
 
-            const station = stations[stationIndex];
-            addLog(`添加工作編號 ${task} 至 ${station.name}，作業種類: ${taskType}，時間: ${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 至 ${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+            // 記錄日誌
+            addLog(`新增工作 ${taskId} 到站點 ${stations[stationIndex].name}，開始時間：${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}，結束時間：${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
 
-            localStorage.setItem('taskId', taskId.toString());
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+            // 將更新後的資料發送到後端
+            try {
+                const response = await fetch('http://localhost:5000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tasks)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || '後端回應錯誤');
+                }
+                console.log('成功更新任務到後端');
+            } catch (error) {
+                console.error('更新任務到後端失敗：', error);
+                alert('無法新增任務，請檢查後端服務是否正常');
+                return;
+            }
 
+            // 渲染更新
             renderTasks();
             renderTimelineCharts();
 
-            document.getElementById(taskTypeSelect).value = '';
-            document.getElementById(stationSelect).value = '';
-            document.getElementById(startTimeInput).value = '';
-            document.getElementById(endTimeInput).value = '';
-            console.log('添加工作後，重置時間選擇器為空白');
-
-            switchTab('timeline');
+            // 重置表單
+            taskTypeSelect.value = '';
+            startTimeInput.value = '';
+            endTimeInput.value = '';
+            stationSelect.value = '';
         }
 
-        function removeWorkpiece(workpieceId, fromIndex) {
+        function renderTaskTypesList() {
+            const taskTypesList = document.getElementById('taskTypeList');
+            taskTypesList.innerHTML = '';
+
+            taskTypes.forEach((taskType, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-2 border-b';
+                div.innerHTML = `
+                    <span>${taskType}</span>
+                    <div>
+                        <button onclick="deleteTaskType(${index})" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
+                            刪除
+                        </button>
+                    </div>
+                `;
+                taskTypesList.appendChild(div);
+            });
+        }
+
+        async function removeWorkpiece(workpieceId, fromIndex) {
             console.log(`開始執行 removeWorkpiece：工件 ${workpieceId}, 站點索引 ${fromIndex}`);
             const fromStation = stations[fromIndex];
             const wp = workpieces[workpieceId];
@@ -1973,59 +2686,67 @@
                 return;
             }
 
-            // 更新狀態
             wp.status = '已抽單';
             wp.currentStation = null;
             console.log(`工件 ${workpieceId} 更新後狀態：${wp.status}`);
             addLog(`已抽單編號 ${workpieceId} 從 ${fromStation?.name || '未知站點'} 站`);
 
-            const calculationDetails = [];
+            const details = [];
             stations.forEach((station, stationIdx) => {
                 let lastCompletionTime = null;
                 Object.keys(workpieces)
-                .map(wpId => ({ wpId, wp: workpieces[wpId] }))
-                .filter(item => item.wp.status === '進行中') // 只考慮「進行中」的工件
-                .sort((a, b) => (a.wp.stationTimes[0].startTime || Date.now()) - (b.wp.stationTimes[0].startTime || Date.now()))
-                .forEach(({ wpId, wp }) => {
-                    const pathIndex = wp.path.indexOf(stationIdx);
-                    if (pathIndex === -1) return;
+                    .map(wpId => ({ wpId, wp: workpieces[wpId] }))
+                    .filter(item => item.wp.status === '進行中')
+                    .sort((a, b) => (a.wp.stationTimes[0].startTime || Date.now()) - (b.wp.stationTimes[0].startTime || Date.now()))
+                    .forEach(({ wpId, wp }) => {
+                        const pathIndex = wp.path.indexOf(stationIdx);
+                        if (pathIndex === -1) return;
 
-                    const timeToStart = pathIndex === 0 ? wp.stationTimes[0].startTime : wp.stationTimes[pathIndex].startTime;
-                    if (lastCompletionTime && timeToStart < lastCompletionTime) {
-                    wp.stationTimes[pathIndex].startTime = lastCompletionTime;
-                    const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
-                    wp.stationTimes[pathIndex].endTime = lastCompletionTime + (processingTime * 60 * 1000);
-                    }
+                        const timeToStart = pathIndex === 0 ? wp.stationTimes[0].startTime : wp.stationTimes[pathIndex].startTime;
+                        if (lastCompletionTime && timeToStart < lastCompletionTime) {
+                            wp.stationTimes[pathIndex].startTime = lastCompletionTime;
+                            const processingTime = getProcessingTimeForWorkpiece(wp, stationIdx);
+                            wp.stationTimes[pathIndex].endTime = lastCompletionTime + (processingTime * 60 * 1000);
+                        }
 
-                    lastCompletionTime = wp.stationTimes[pathIndex].endTime;
+                        lastCompletionTime = wp.stationTimes[pathIndex].endTime;
 
-                    calculationDetails.push({
-                    workpieceId: wpId,
-                    stationName: station.name,
-                    lastCompletionTimeAtStation: lastCompletionTime || null,
-                    startTimeForThisStation: wp.stationTimes[pathIndex].startTime,
-                    processingTime: getProcessingTimeForWorkpiece(wp, stationIdx),
-                    completionTime: wp.stationTimes[pathIndex].endTime
+                        details.push({
+                            workpieceId: wpId,
+                            stationName: station.name,
+                            lastCompletionTimeAtStation: lastCompletionTime || null,
+                            startTimeForThisStation: wp.stationTimes[pathIndex].startTime,
+                            processingTime: getProcessingTimeForWorkpiece(wp, stationIdx),
+                            completionTime: wp.stationTimes[pathIndex].endTime
+                        });
                     });
-                });
                 station.startTime = lastCompletionTime;
             });
 
-            addMonitorLog(`移除工件 ${workpieceId} 從 ${fromStation?.name || '未知站點'} 站`, calculationDetails);
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-            console.log(`已保存 workpieces 到 localStorage，工件 ${workpieceId} 狀態：${workpieces[workpieceId].status}`);
+            addLog(`移除工件 ${workpieceId} 從 ${fromStation?.name || '未知站點'} 站`, details);
 
-            // 重新渲染相關組件
-            console.log(`開始重新渲染站點狀態清單`);
+            // 將更新後的資料發送到後端
+            try {
+                const response = await fetch('http://localhost:5000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tasks)
+                });
+                if (!response.ok) {
+                    throw new Error(`後端回應錯誤：${response.statusText}`);
+                }
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+                alert('無法新增任務，請檢查後端服務是否正常');
+            }
+
             renderStations();
-            console.log(`開始重新渲染生產清單`);
             renderWorkpieces();
-            console.log(`開始重新渲染時間軸圖表`);
             renderTimelineCharts();
             console.log(`完成 removeWorkpiece 執行`);
         }
 
-        function completeWorkpiece(workpieceId, fromIndex) {
+        async function completeWorkpiece(workpieceId, fromIndex) {
             console.log(`開始執行 completeWorkpiece：工件 ${workpieceId}, 站點索引 ${fromIndex}`);
             const fromStation = stations[fromIndex];
             const wp = workpieces[workpieceId];
@@ -2047,52 +2768,60 @@
                 return;
             }
 
-            // 更新狀態
             wp.status = '已完成';
-            wp.currentStation = null; // 完成後清除當前站點
+            wp.currentStation = null;
             console.log(`工件 ${workpieceId} 更新後狀態：${wp.status}`);
             addLog(`編號 ${workpieceId} 從 ${fromStation?.name || '未知站點'} 站已完成`);
 
-            // 儲存更新後的數據
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-            console.log(`已保存 workpieces 到 localStorage，工件 ${workpieceId} 狀態：${workpieces[workpieceId].status}`);
+            // 將更新後的資料發送到後端
+            try {
+                await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+            }
 
-            // 重新渲染相關組件
-            console.log(`開始重新渲染站點狀態清單`);
             renderStations();
-            console.log(`開始重新渲染生產清單`);
             renderWorkpieces();
-            console.log(`開始重新渲染時間軸圖表`);
             renderTimelineCharts();
             console.log(`完成 completeWorkpiece 執行`);
         }
 
-        function resetSystem() {
-            stations.forEach(station => {
-                station.startTime = null;
-            });
-            Object.keys(workpieces).forEach(wp => delete workpieces[wp]);
-            Object.keys(tasks).forEach(task => delete tasks[task]);
+        async function resetSystem() {
+            stations = defaultStations.map(station => ({ ...station }));
+            workpieces = {};
+            tasks = {};
             workpieceId = 0;
-            taskId = 0;
-            currentProcessingTimes = Array(stations.length).fill(10);
-            document.getElementById('logList').innerHTML = '';
-            monitorLogs = [];
-            localStorage.setItem('workpieceId', '0');
-            localStorage.setItem('taskId', '0');
-            localStorage.setItem('workpieces', JSON.stringify(workpieces));
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-            addLog('系統已重置');
+
+            // 將更新後的資料發送到後端
+            try {
+                await fetch('http://localhost:5000/stations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stations)
+                });
+                await fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+                await fetch('http://localhost:5000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tasks)
+                });
+            } catch (error) {
+                console.error('更新資料到後端失敗：', error);
+            }
+
             renderStations();
             renderWorkpieces();
             renderTasks();
-            renderMonitorLogs();
             renderTimelineCharts();
-
-            document.getElementById('timelineStartTimeInput').value = '';
-            document.getElementById('timelineTaskStartTimeInput').value = '';
-            document.getElementById('timelineTaskEndTimeInput').value = '';
-            console.log('重置系統，設置時間選擇器為空白');
+            addLog('系統已重置');
         }
 
         const workpieceColors = {};
@@ -2119,6 +2848,22 @@
                 taskColors[taskId] = `hsl(${hue}, 70%, 50%)`;
             }
             return taskColors[taskId];
+        }
+
+        function ensureLayoutAndRender() {//
+            if (!timelineContent.classList.contains('active')) return;; // 不是 timeline 頁面，直接結束
+
+            const timelineCharts = document.getElementById('timelineCharts');
+            const isVisible = timelineContent.offsetParent !== null;
+            const rect = timelineCharts.getBoundingClientRect();
+            const hasDimensions = rect.width > 0 && rect.height > 0;
+
+            if (isVisible && hasDimensions) {
+                renderTimelineCharts();
+                setTimeout(() => timelineCharts.offsetHeight, 50);
+            } else {
+                requestAnimationFrame(ensureLayoutAndRender);
+            }
         }
 
         function renderTimelineCharts() {
@@ -2195,7 +2940,6 @@
                 let workpieceTasks = [];
                 Object.keys(workpieces).forEach(wpId => {
                     const wp = workpieces[wpId];
-                    // 過濾掉「已抽單」的工件，不顯示在時間軸上
                     if (wp.status === '已抽單') {
                         console.log(`工件 ${wpId} 已抽單，不顯示在時間軸上`);
                         return;
@@ -2249,8 +2993,6 @@
                     standaloneTasks.push({ taskId, startTime: adjustedStartTime, endTime: adjustedEndTime });
                 });
 
-                console.log(`站點 ${station.name} 的工件任務數量：${workpieceTasks.length}，獨立工作數量：${standaloneTasks.length}`);
-
                 const allTasks = [
                     ...workpieceTasks.map(task => ({ type: 'workpiece', ...task })),
                     ...standaloneTasks.map(task => ({ type: 'task', ...task }))
@@ -2259,7 +3001,7 @@
                 allTasks.sort((a, b) => {
                     const idA = a.type === 'workpiece' ? parseInt(a.wpId) : parseInt(a.taskId);
                     const idB = b.type === 'workpiece' ? parseInt(b.wpId) : parseInt(b.taskId);
-                    return idB - idA; // 編號大的（較新的）排在前面
+                    return idB - idA;
                 });
 
                 let zIndexCounter = allTasks.length;
@@ -2282,7 +3024,6 @@
                         return;
                     }
 
-                    console.log(`渲染${isWorkpiece ? '工件' : '工作'} ${id} 在站點 ${station.name}：startTime=${new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, endTime=${new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}, left=${left}, width=${width}`);
 
                     const taskDiv = document.createElement('div');
                     taskDiv.className = 'task';
@@ -2294,18 +3035,14 @@
                     let taskColor;
                     if (isWorkpiece) {
                         if (data.isUrgent) {
-                            taskColor = '#ff0000'; // 急件顯示紅色
-                            console.log(`工件 ${id} 為急件，背景顏色設為紅色：${taskColor}`);
+                            taskColor = '#ff0000';
                         } else if (data.status === '已完成') {
-                            taskColor = '#D3D3D3'; // 已完成顯示淺灰色（原為 #00FF00 亮綠色）
-                            console.log(`工件 ${id} 已完成，背景顏色設為淺灰色：${taskColor}`);
+                            taskColor = '#D3D3D3';
                         } else {
                             taskColor = getWorkpieceColor(id);
-                            console.log(`工件 ${id} 非急件，使用生成顏色：${taskColor}`);
                         }
                     } else {
                         taskColor = getTaskColor(id);
-                        console.log(`工作 ${id} 使用生成顏色：${taskColor}`);
                     }
 
                     if (!taskColor || taskColor === 'black' || taskColor === '#000000') {
@@ -2325,6 +3062,34 @@
                     const label = document.createElement('span');
                     label.textContent = isWorkpiece ? (data.product || '未指定') : (data.taskType || '未指定');
                     taskDiv.appendChild(label);
+                const draggable = !isWorkpiece || data.status !== '已完成';
+                
+                if (!draggable) {
+                    taskDiv.style.cursor = 'not-allowed';
+                     taskDiv.title = '已完成不可拖曳';
+                } else {
+                    taskDiv.style.cursor = 'move';
+
+
+
+                    taskDiv.addEventListener('mousedown', function(e) {
+                        if (e.button !== 0) return;
+                        draggingTaskObj = {
+                            type: isWorkpiece ? 'workpiece' : 'task',
+                            id: id,
+                            pathIndex: pathIndex,
+                            stationIndex: stationIndex,
+                            taskDiv: taskDiv
+                        };
+                        dragStartX = e.clientX;
+                        dragOriginalLeft = parseFloat(taskDiv.style.left);
+                        dragTimelineStart = todayStart;
+                        dragOriginalStartTime = startTime;
+                        dragOriginalEndTime = endTime;
+                        document.body.style.cursor = 'grabbing';
+                        e.preventDefault();
+                    });
+                }
 
                     const startTimeFormatted = new Date(startTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
                     const endTimeFormatted = new Date(endTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
@@ -2436,7 +3201,7 @@
                         modal.style.top = `${currentY + (modal.offsetHeight / 2)}px`;
                         modal.style.transform = 'none';
 
-                        modal.querySelector('.confirm-btn').addEventListener('click', () => {
+                        modal.querySelector('.confirm-btn').addEventListener('click', async () => {
                             const newStartTimeInput = modal.querySelector('#newStartTimeInput').value;
                             const newEndTimeInput = modal.querySelector('#newEndTimeInput').value;
                             const newStartDate = new Date(newStartTimeInput);
@@ -2511,7 +3276,7 @@
                                     data.endTime = newEndTimeMs;
                                 }
 
-                                addMonitorLog(`修改${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`, [{
+                                addLog(`修改${isWorkpiece ? '工件' : '工作'} ${id} 在 ${stations[stationIndex]?.name || '未知站點'} 的時間`, [{
                                     workpieceId: id,
                                     stationName: stations[stationIndex]?.name || '未知站點',
                                     lastCompletionTimeAtStation: null,
@@ -2520,8 +3285,24 @@
                                     completionTime: newEndTimeMs
                                 }]);
 
-                                localStorage.setItem('workpieces', JSON.stringify(workpieces));
-                                localStorage.setItem('tasks', JSON.stringify(tasks));
+                                // 將更新後的資料發送到後端
+                                try {
+                                    if (isWorkpiece) {
+                                        await fetch('http://localhost:5000/workpieces', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(workpieces)
+                                        });
+                                    } else {
+                                        await fetch('http://localhost:5000/tasks', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(tasks)
+                                        });
+                                    }
+                                } catch (error) {
+                                    console.error('更新資料到後端失敗：', error);
+                                }
 
                                 renderStations();
                                 renderWorkpieces();
@@ -2559,6 +3340,183 @@
             timelineCharts.offsetHeight;
             console.log('時間軸渲染完成');
         }
+        function renderWeeklyProductChart() {
+            const dateInput = document.getElementById('weeklyDatePicker');
+            const container = document.getElementById('weeklyProductChart');
+            container.innerHTML = ''; // 清空
+
+            // 取得選擇的日期，沒有就預設今天
+            let selectedDate = new Date();
+            
+            if (dateInput && dateInput.value) {
+                selectedDate = new Date(dateInput.value);
+            }
+
+            // 算出該週週一的日期
+            let weekDay = selectedDate.getDay(); // 0=日, 1=一, ..., 6=六
+            weekDay = weekDay === 0 ? 7 : weekDay; // 讓週日變7（讓週一是第一天）
+            const monday = new Date(selectedDate);
+            monday.setDate(selectedDate.getDate() - (weekDay - 1));
+            // 產生這週的日期陣列
+            const weekDates = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(monday);
+                d.setDate(monday.getDate() + i);
+                weekDates.push(d);
+            }
+            const days = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+            const periods = ['早上', '下午', '晚上'];
+            const periodRanges = [
+                [6, 12],
+                [12, 18],
+                [18, 24]
+            ];
+
+            // 產品列表
+            const productList = Array.from(new Set(Object.values(workpieces).map(wp => wp.product || '未指定')));
+            const picker = document.getElementById('weeklyDatePicker');
+            let startOfWeek;
+            if (picker && picker.value) {
+                const selected = new Date(picker.value);
+                const day = selected.getDay();
+                startOfWeek = new Date(selected);
+                startOfWeek.setDate(selected.getDate() - ((day === 0 ? 7 : day) - 1));
+            } else {
+                const today = new Date();
+                const day = today.getDay();
+                startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - ((day === 0 ? 7 : day) - 1));
+            }
+            let weekHeaders = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(startOfWeek);
+                d.setDate(startOfWeek.getDate() + i);
+                const mmdd = `${d.getMonth() + 1}/${d.getDate()}`;
+                weekHeaders.push(mmdd);
+            }
+            const dayNames = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+
+            // 3. 產生表格標題
+            let tableHTML = '<table class="border-collapse w-full"><thead><tr>';
+            tableHTML += '<th class="border p-2 bg-gray-100"></th>';
+            for (let i = 0; i < 7; i++) {
+                tableHTML += `<th class="border p-2 bg-gray-100">${dayNames[i]}<br><span style="font-weight:400;">${weekHeaders[i]}</span><br>早上</th>`;
+                tableHTML += `<th class="border p-2 bg-gray-100">${dayNames[i]}<br><span style="font-weight:400;">${weekHeaders[i]}</span><br>下午</th>`;
+                tableHTML += `<th class="border p-2 bg-gray-100">${dayNames[i]}<br><span style="font-weight:400;">${weekHeaders[i]}</span><br>晚上</th>`;
+            }
+            tableHTML += '</tr></thead>';
+            // 建表格
+            const table = document.createElement('table');
+            table.className = 'border-collapse w-full';
+            table.style.tableLayout = 'fixed';
+
+            // 標題列(兩層)
+            const thead = document.createElement('thead');
+            const trHead1 = document.createElement('tr');
+            const thProduct = document.createElement('th');
+            thProduct.rowSpan = 2;
+            thProduct.className = 'border p-2 bg-gray-100 text-lg';
+            thProduct.textContent = '產品';
+            trHead1.appendChild(thProduct);
+
+            weekDates.forEach((date, i) => {
+                const th = document.createElement('th');
+                th.colSpan = periods.length;
+                th.className = 'border p-2 bg-gray-100 text-lg';
+                // 週一 06/03
+                th.innerHTML = `${days[i]}<br><span style="font-size:13px;color:#2b3;">${(date.getMonth()+1).toString().padStart(2,'0')}/${date.getDate().toString().padStart(2,'0')}</span>`;
+                trHead1.appendChild(th);
+            });
+            thead.appendChild(trHead1);
+
+            const trHead2 = document.createElement('tr');
+            weekDates.forEach(() => {
+                periods.forEach(period => {
+                    const th = document.createElement('th');
+                    th.className = 'border p-2 bg-gray-50 text-lg';
+                    th.textContent = period;
+                    trHead2.appendChild(th);
+                });
+            });
+            thead.appendChild(trHead2);
+            table.appendChild(thead);
+
+            // 主體內容
+            const tbody = document.createElement('tbody');
+            productList.forEach(product => {
+                const tr = document.createElement('tr');
+                const tdProduct = document.createElement('td');
+                tdProduct.className = 'border p-2 font-bold bg-gray-50 text-lg';
+                tdProduct.textContent = product;
+                tr.appendChild(tdProduct);
+
+                // 7天*3時段
+                for (let d = 0; d < 7; d++) {
+                    for (let p = 0; p < 3; p++) {
+                        const td = document.createElement('td');
+                        td.className = 'border p-1 relative';
+                        td.style.height = '96px';
+                        td.style.fontSize = '18px';
+                        td.style.verticalAlign = 'top';
+
+                        // 搜尋這個產品、這天、這時段的所有工件
+                        Object.values(workpieces).forEach(wp => {
+                            if ((wp.product || '未指定') !== product) return;
+                            wp.path.forEach((stationIndex, i) => {
+                                const st = stations[stationIndex];
+                                const stTimes = wp.stationTimes[i];
+                                if (!stTimes || !stTimes.startTime || !stTimes.endTime) return;
+                                const s = new Date(stTimes.startTime);
+                                const e = new Date(stTimes.endTime);
+
+                                // 判斷是否這一天
+                                if (s.getFullYear() === weekDates[d].getFullYear()
+                                    && s.getMonth() === weekDates[d].getMonth()
+                                    && s.getDate() === weekDates[d].getDate()) {
+                                    // 判斷是否落在這時段
+                                    const sHour = s.getHours();
+                                    const eHour = e.getHours() + (e.getMinutes() > 0 ? 1 : 0);
+                                    if (
+                                        (sHour < periodRanges[p][1] && eHour > periodRanges[p][0])
+                                    ) {
+                                        const totalMinutes = (periodRanges[p][1] - periodRanges[p][0]) * 60;
+                                        const barStart = Math.max(periodRanges[p][0], sHour) - periodRanges[p][0];
+                                        const barEnd = Math.min(periodRanges[p][1], eHour) - periodRanges[p][0];
+                                        const left = (barStart / (periodRanges[p][1] - periodRanges[p][0])) * 100;
+                                        const width = ((barEnd - barStart) / (periodRanges[p][1] - periodRanges[p][0])) * 100;
+
+                                        const bar = document.createElement('div');
+                                        bar.title = `${st.name} ${s.toLocaleTimeString()}-${e.toLocaleTimeString()}`;
+                                        bar.textContent = st.name;
+                                        bar.style.position = 'absolute';
+                                        bar.style.left = `${left}%`;
+                                        bar.style.width = `${width}%`;
+                                        bar.style.top = '8px';
+                                        bar.style.height = '64px';
+                                        bar.style.background = '#87ceeb';
+                                        bar.style.borderRadius = '12px';
+                                        bar.style.display = 'flex';
+                                        bar.style.alignItems = 'center';
+                                        bar.style.justifyContent = 'center';
+                                        bar.style.fontSize = '22px';
+                                        bar.style.color = '#333';
+                                        bar.style.border = '2px solid #6bb3e9';
+                                        bar.style.cursor = 'pointer';
+                                        td.appendChild(bar);
+                                    }
+                                }
+                            });
+                        });
+                        tr.appendChild(td);
+                    }
+                }
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            container.appendChild(table);
+        }
+
+
         document.getElementById('prevDay').addEventListener('click', () => {
             const dateFilter = document.getElementById('dateFilter');
             const currentDate = new Date(dateFilter.value);
@@ -2589,6 +3547,198 @@
         document.getElementById('timelineTaskEndTimeInput').value = '';
         console.log('初始化時間選擇器為空白');
 
+        document.getElementById('wpDateQueryBtn').addEventListener('click', () => {
+            const startDate = document.getElementById('wpStartDate').value;
+            const endDate = document.getElementById('wpEndDate').value;
+            renderWorkpieces({ startDate, endDate });
+        });
+        document.getElementById('wpDateResetBtn').addEventListener('click', () => {
+            document.getElementById('wpStartDate').value = '';
+            document.getElementById('wpEndDate').value = '';
+            renderWorkpieces();
+        });
+        document.getElementById('weeklyTab').addEventListener('click', () => {
+            document.querySelectorAll('.tab-content').forEach(div => div.style.display = 'none');
+            document.getElementById('weeklyContent').style.display = '';
+            renderWeeklyProductChart();
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // 保證 date input 有預設值（預設今天）
+            const dateInput = document.getElementById('weeklyDatePicker');
+            if (dateInput && !dateInput.value) {
+                const today = new Date();
+                dateInput.value = today.toISOString().split('T')[0];
+            }
+            document.getElementById('weeklyPrevWeekBtn').addEventListener('click', () => {
+                const dateInput = document.getElementById('weeklyDatePicker');
+                let selected = dateInput.value ? new Date(dateInput.value) : new Date();
+                let weekDay = selected.getDay();
+                weekDay = weekDay === 0 ? 7 : weekDay;
+                // 算目前週一
+                let monday = new Date(selected);
+                monday.setDate(selected.getDate() - (weekDay - 1));
+                // 跳到「前一週」的週一
+                monday.setDate(monday.getDate() - 7);
+                dateInput.value = monday.toISOString().split('T')[0];
+                renderWeeklyProductChart();
+            });
+
+            document.getElementById('weeklyNextWeekBtn').addEventListener('click', () => {
+                const dateInput = document.getElementById('weeklyDatePicker');
+                let selected = dateInput.value ? new Date(dateInput.value) : new Date();
+                let weekDay = selected.getDay();
+                weekDay = weekDay === 0 ? 7 : weekDay;
+                // 算目前週一
+                let monday = new Date(selected);
+                monday.setDate(selected.getDate() - (weekDay - 1));
+                // 跳到「下一週」的週一
+                monday.setDate(monday.getDate() + 7);
+                dateInput.value = monday.toISOString().split('T')[0];
+                renderWeeklyProductChart();
+            });
+
+            document.getElementById('weeklyDatePicker').addEventListener('change', () => {
+                renderWeeklyProductChart();
+            });
+        });
+
+
+
+        document.addEventListener('mousemove', function(e) {
+            if (!draggingTaskObj) return;
+            let dx = e.clientX - dragStartX;
+            // 你的每30分鐘=40px，1px=1800000ms/40=45000ms
+            let msPerPx = 30 * 60 * 1000 / 40;
+            let dt = dx * msPerPx;
+            // 立即移動
+            draggingTaskObj.taskDiv.style.left = (dragOriginalLeft + dx) + 'px';
+        });
+
+        document.addEventListener('mouseup', function(e) {
+            if (!draggingTaskObj) return;
+            let dx = e.clientX - dragStartX;
+            let msPerPx = 30 * 60 * 1000 / 40;
+            let dt = dx * msPerPx;
+            let newStartTime = dragOriginalStartTime + dt;
+            let newEndTime = dragOriginalEndTime + dt;
+
+            // --- 判斷有無衝突（與你現有 confirm/彈窗那段一樣） ---
+            let hasConflict = false;
+            const stationIndex = draggingTaskObj.stationIndex;
+
+            if (draggingTaskObj.type === 'workpiece') {
+                // 檢查其他工件
+                Object.keys(workpieces).forEach(otherWpId => {
+                    if (otherWpId === draggingTaskObj.id) return;
+                    const otherWp = workpieces[otherWpId];
+                    if (otherWp.status === '已抽單' || otherWp.status === '已完成') return;
+                    const otherPathIndex = otherWp.path.indexOf(stationIndex);
+                    if (otherPathIndex === -1) return;
+                    const otherStartTime = otherWp.stationTimes[otherPathIndex].startTime;
+                    const otherEndTime = otherWp.stationTimes[otherPathIndex].endTime;
+                    if (newStartTime < otherEndTime && newEndTime > otherStartTime) {
+                        hasConflict = true;
+                    }
+                });
+                // 檢查任務
+                Object.keys(tasks).forEach(taskId => {
+                    const task = tasks[taskId];
+                    if (task.status === '已抽單') return;
+                    if (task.stationIndex !== stationIndex) return;
+                    const taskStartTime = task.startTime;
+                    const taskEndTime = task.endTime;
+                    if (newStartTime < taskEndTime && newEndTime > taskStartTime) {
+                        hasConflict = true;
+                    }
+                });
+                // 檢查前一站不能提早
+                const wp = workpieces[draggingTaskObj.id];
+                const pathIndex = draggingTaskObj.pathIndex;
+                if (pathIndex > 0) {
+                    const prevEndTime = wp.stationTimes[pathIndex - 1].endTime;
+                    if (newStartTime < prevEndTime) {
+                        alert('前一站還沒完成！');
+                        draggingTaskObj.taskDiv.style.left = dragOriginalLeft + 'px';
+                        draggingTaskObj = null;
+                        document.body.style.cursor = '';
+                        return;
+                    }
+                }
+                // 如果有衝突
+                if (hasConflict) {
+                    alert('時間有重疊，無法調整！');
+                    draggingTaskObj.taskDiv.style.left = dragOriginalLeft + 'px';
+                    draggingTaskObj = null;
+                    document.body.style.cursor = '';
+                    return;
+                }
+                // 更新資料
+                wp.stationTimes[pathIndex].startTime = newStartTime;
+                wp.stationTimes[pathIndex].endTime = newEndTime;
+                // 你如果有「自動連動」後面站點，也可在這裡調整
+            } else {
+                // --- 獨立工作拖曳 ---
+                Object.keys(workpieces).forEach(wpId => {
+                    const wp = workpieces[wpId];
+                    if (wp.status === '已抽單' || wp.status === '已完成') return;
+                    const pathIndex = wp.path.indexOf(stationIndex);
+                    if (pathIndex === -1) return;
+                    const wpStartTime = wp.stationTimes[pathIndex].startTime;
+                    const wpEndTime = wp.stationTimes[pathIndex].endTime;
+                    if (newStartTime < wpEndTime && newEndTime > wpStartTime) {
+                        hasConflict = true;
+                    }
+                });
+                Object.keys(tasks).forEach(taskId => {
+                    if (taskId === draggingTaskObj.id) return;
+                    const task = tasks[taskId];
+                    if (task.status === '已抽單') return;
+                    if (task.stationIndex !== stationIndex) return;
+                    const taskStartTime = task.startTime;
+                    const taskEndTime = task.endTime;
+                    if (newStartTime < taskEndTime && newEndTime > taskStartTime) {
+                        hasConflict = true;
+                    }
+                });
+                if (hasConflict) {
+                    alert('時間有重疊，無法調整！');
+                    draggingTaskObj.taskDiv.style.left = dragOriginalLeft + 'px';
+                    draggingTaskObj = null;
+                    document.body.style.cursor = '';
+                    return;
+                }
+                // 更新資料
+                const task = tasks[draggingTaskObj.id];
+                task.startTime = newStartTime;
+                task.endTime = newEndTime;
+            }
+
+            // 寫入後端
+            if (draggingTaskObj.type === 'workpiece') {
+                fetch('http://localhost:5000/workpieces', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workpieces)
+                });
+            } else {
+                fetch('http://localhost:5000/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tasks)
+                });
+            }
+
+            // 重渲染
+            renderStations();
+            renderWorkpieces();
+            renderTasks();
+            renderTimelineCharts();
+            draggingTaskObj = null;
+            document.body.style.cursor = '';
+        });
+
+
         renderStations();
         renderWorkpieces();
         renderTasks();
@@ -2596,13 +3746,13 @@
         renderTaskTypes();
         renderMonitorLogs();
         renderTimelineCharts();
-        renderStationCheckboxes();
         renderTimelineStationCheckboxes();
         renderStationsList();
         renderProcessingTimesInputs();
         populateTimelineCapacityDropdown();
         populateTimelineTaskTypeDropdown();
         populateTimelineTaskStationDropdown();
+
     </script>
 </body>
 </html>
